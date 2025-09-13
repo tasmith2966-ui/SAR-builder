@@ -3,27 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SAR Kneeboard — Typewriter</title>
+<title>SAR Kneeboard — v9 (Pages-safe, full)</title>
+<link rel="preload" href="app.js" as="script">
 <style>
   :root{
-    --desk:#b9b19c;
-    --paper:#f5f2e6;
-    --paper2:#f0ecde;
-    --ink:#1a1d2b;
-    --rule:#bcae8f;
-    --tab:#20345a;
-    --btn-bg1:#2a426e; --btn-bg2:#163056; --btn-br:#0f1b35;
-    --btnp-bg1:#bf2f2f; --btnp-bg2:#8f1f1f; --btnp-br:#5f1515;
+    --desk:#b9b19c; --paper:#f5f2e6; --paper2:#f0ecde; --ink:#1a1d2b; --rule:#bcae8f; --tab:#20345a;
+    --btn-bg1:#2a426e; --btn-bg2:#163056; --btn-br:#0f1b35; --btnp-bg1:#bf2f2f; --btnp-bg2:#8f1f1f; --btnp-br:#5f1515;
   }
   body.night{
-    --desk:#081108;
-    --paper:#0d150d;
-    --paper2:#0a120a;
-    --ink:#bafba9;
-    --rule:#1a2b1a;
-    --tab:#0f2a12;
-    --btn-bg1:#113f1b; --btn-bg2:#0a2b12; --btn-br:#08210c;
-    --btnp-bg1:#1e5c2a; --btnp-bg2:#184d23; --btnp-br:#0f3a19;
+    --desk:#081108; --paper:#0d150d; --paper2:#0a120a; --ink:#bafba9; --rule:#1a2b1a; --tab:#0f2a12;
+    --btn-bg1:#113f1b; --btn-bg2:#0a2b12; --btn-br:#08210c; --btnp-bg1:#1e5c2a; --btnp-bg2:#184d23; --btnp-br:#0f3a19;
   }
   html,body{height:100%}
   *{box-sizing:border-box}
@@ -90,23 +79,25 @@
   .mini{font-size:11px; color:#3b3b3b} body.night .mini{ color:#79b171 }
   .inline{display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap} .inline > div{flex:1 1 0}
   .err{color:#9b0f0f; font-size:12px; margin-top:4px} body.night .err{ color:#e58f8f }
+  .badge{ display:inline-block; padding:2px 6px; border:2px solid #244b24; background:#0a2b12; color:#bafba9; font-weight:700; margin-left:6px }
+  .bad{ border-color:#5f1b1b; background:#3a1212; color:#ffd1d1 }
   .jswarn{position:sticky; top:0; background:#fff3cd; color:#532; border:2px solid #e0c26b; padding:8px 10px; margin:0; font-weight:700}
   body.night .jswarn{ background:#132013; color:#bafba9; border-color:#244b24 }
   @media print{ header,.btns,#btnPrint,#btnNight,.jswarn{display:none!important} body{background:#fff; text-shadow:none} .card{box-shadow:none} }
 </style>
 </head>
 <body>
-<p id="jswarn" class="jswarn">If this banner stays visible, JavaScript is blocked. Open the file in Firefox (not Files preview).</p>
+<p id="jswarn" class="jswarn">If this banner stays visible, JavaScript is blocked or inline handlers are disallowed. This build uses an external script (app.js). Make sure it’s in the same folder.</p>
 <header>
   <h1>SAR Kneeboard — Typewriter Edition</h1>
   <div class="btns">
-    <button class="primary" id="btnSave" onclick="onSave()">Save</button>
-    <button id="btnLoad" onclick="onLoad()">Load</button>
-    <button id="btnExport" onclick="onExport()">Export</button>
-    <button id="btnPrint" onclick="window.print()">Print/PDF</button>
-    <button id="btnReset" onclick="onReset()">Reset</button>
-    <button id="btnNow" onclick="onNow()">Now→Top Times</button>
-    <button id="btnNight" onclick="onNight()">Night Mode</button>
+    <button class="primary" id="btnSave">Save</button>
+    <button id="btnLoad">Load</button>
+    <button id="btnExport">Export</button>
+    <button id="btnPrint">Print/PDF</button>
+    <button id="btnReset">Reset</button>
+    <button id="btnNow">Now→Top Times</button>
+    <button id="btnNight">Night Mode</button>
   </div>
 </header>
 
@@ -133,10 +124,10 @@
 
     <label>Location (Lat/Long “3655.39N/12208.28W”)</label>
     <div class="row">
-      <input type="text" id="brief_location" placeholder="3655.39N/12208.28W">
-      <button type="button" onclick="onGPS()">Use GPS</button>
-      <button type="button" onclick="onOnScene()">On‑Scene Wx</button>
-      <button type="button" onclick="onPointAvi()">Point Wx (Aviation)</button>
+      <input type="text" id="brief_location" placeholder="3655.39N/12208.28W" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <button type="button" id="btnGPS">Use GPS</button>
+      <button type="button" id="btnOnScene">On‑Scene Wx</button>
+      <button type="button" id="btnPointAvi">Point Wx (Aviation)</button>
     </div>
     <div id="onscene_err" class="err"></div>
 
@@ -167,7 +158,7 @@
         <label>METAR Station</label>
         <div class="row">
           <input type="text" id="metar_station" value="KSFO" placeholder="KSFO">
-          <button type="button" onclick="onMetar()">Fetch METAR</button>
+          <button type="button" id="btnMetar">Fetch METAR</button>
         </div>
         <div class="mini">Use Firefox if Safari blocks requests.</div>
       </div>
@@ -231,6 +222,27 @@
     </div>
   </div>
 
+  <!-- Fuel Calculator (full) -->
+  <div class="card" id="fuelCalc">
+    <h2>Fuel Calculator (Simple v9)</h2>
+    <div class="grid g3">
+      <div><label>Takeoff Fuel</label><input type="text" id="fc_start" inputmode="decimal" placeholder="e.g., 1500"></div>
+      <div><label>Planned Landing Fuel</label><input type="text" id="fc_end" inputmode="decimal" placeholder="e.g., 400"></div>
+      <div><label>Hover/Climb Burn (per hr)</label><input type="text" id="fc_hov_burn" inputmode="decimal" placeholder="e.g., 700"></div>
+      <div><label>Distance to On‑Scene (NM)</label><input type="text" id="fc_dist" inputmode="decimal" placeholder="e.g., 40"></div>
+      <div><label>Cruise Speed (KTAS)</label><input type="text" id="fc_tas" inputmode="decimal" placeholder="e.g., 120"></div>
+      <div><label>Cruise Burn (per hr)</label><input type="text" id="fc_cru_burn" inputmode="decimal" placeholder="e.g., 600"></div>
+      <div><label>Distance to Landing (NM)</label><input type="text" id="fc_dist_back" inputmode="decimal" placeholder="e.g., 40"></div>
+    </div>
+    <div class="btns" style="margin-top:10px">
+      <button type="button" id="fc_btn_calc">Compute</button>
+      <button type="button" id="fc_btn_clear">Clear</button>
+      <button type="button" id="fc_btn_prefill">Prefill 1500/400/40/120/600/40/700</button>
+    </div>
+    <div class="mini">Units must match (lbs or gal). Times rounded to nearest minute.</div>
+    <div id="fc_out" style="margin-top:10px; font-size:14px; line-height:1.35"></div>
+  </div>
+
   <div class="card">
     <h2>Mission Log</h2>
     <table class="tbl">
@@ -283,272 +295,6 @@
 </main>
 
 <noscript><div class="jswarn">JavaScript is disabled. Buttons won’t work.</div></noscript>
-
-<script>
-  // Self-test: hide JS warning once script runs
-  (function(){ var w=document.getElementById('jswarn'); if(w) w.style.display='none'; })();
-
-  var FORM_ID='sar_kneeboard_v72';
-
-  // Theme restore
-  (function(){
-    try{
-      var saved = localStorage.getItem(FORM_ID+'_theme');
-      if(saved==='night') document.body.classList.add('night');
-    }catch(e){}
-  })();
-
-  function flash(msg){
-    try{
-      var el=document.createElement('div');
-      el.textContent=msg;
-      el.style.position='fixed'; el.style.bottom='16px'; el.style.left='50%'; el.style.transform='translateX(-50%)';
-      el.style.background='rgba(0,0,0,.8)'; el.style.color='#c6ffb5'; el.style.padding='8px 12px'; el.style.border='2px solid #244b24'; el.style.borderRadius='4px'; el.style.fontWeight='700'; el.style.zIndex='9999';
-      document.body.appendChild(el); setTimeout(function(){el.remove();},1400);
-    }catch(e){}
-  }
-
-  // Basic helpers
-  function $(id){ return document.getElementById(id); }
-  function autoGrow(el){ el.style.height='auto'; el.style.height=(el.scrollHeight+2)+'px'; }
-
-  // Time helpers HHMM
-  function hhmmLocalNow(){ var d=new Date(); return String(d.getHours()).padStart(2,'0') + String(d.getMinutes()).padStart(2,'0'); }
-  function hhmmZulu(hhmm){
-    if(!hhmm) return '';
-    var hh=parseInt(hhmm.slice(0,2),10), mm=parseInt(hhmm.slice(2,4)||'0',10);
-    if(isNaN(hh)||isNaN(mm)) return '';
-    var now=new Date(), local=new Date(now); local.setHours(hh,mm,0,0);
-    var z=new Date(local.getTime()+now.getTimezoneOffset()*60000);
-    return String(z.getUTCHours()).padStart(2,'0') + String(z.getUTCMinutes()).padStart(2,'0');
-  }
-  function normalizeHHMM(s){
-    if(!s) return '';
-    s=s.replace(/[^0-9]/g,'').slice(0,4);
-    if(s.length===3) s='0'+s;
-    if(s.length<4) return s;
-    var hh=Math.max(0, Math.min(23, parseInt(s.slice(0,2),10)));
-    var mm=Math.max(0, Math.min(59, parseInt(s.slice(2,4),10)));
-    return String(hh).padStart(2,'0') + String(mm).padStart(2,'0');
-  }
-
-  // Field sync
-  function attachSync(localId, zId){
-    var le=$(localId), ze=$(zId); if(!le||!ze) return;
-    function sync(){ var n=normalizeHHMM(le.value); le.value=n; ze.value=n?hhmmZulu(n):''; }
-    le.addEventListener('input', sync); le.addEventListener('change', sync);
-  }
-  attachSync('brief_current_time','brief_current_time_z');
-  attachSync('brief_call_time','brief_call_time_z');
-
-  // Textareas autoresize
-  (function(){ var areas=document.querySelectorAll('textarea'); for(var i=0;i<areas.length;i++){ (function(t){ autoGrow(t); t.addEventListener('input', function(){autoGrow(t);}); })(areas[i]); } })();
-
-  // Save/Load
-  function serialize(){
-    var ids=[
-      'brief_current_time','brief_current_time_z','brief_call_time','brief_call_time_z',
-      'brief_location','brief_search_object','brief_tasking','brief_reporting_source','brief_other_assets',
-      'brief_weather','metar_station','brief_fuel_plan',
-      'so_name','so_length','so_type','so_color','so_pob','so_position',
-      'os_wind','os_ceiling','os_vis','os_airtemp','os_seas','os_swells',
-      'sd_cpt','sd_leg','sd_width','sd_ts','sd_creep','sd_csp','sd_first',
-      'evt_req_time_local','evt_req_time_z','evt_req_fuel','evt_req_pos',
-      'evt_to_time_local','evt_to_time_z','evt_to_fuel','evt_to_pos',
-      'evt_csp_time_local','evt_csp_time_z','evt_csp_fuel','evt_csp_pos',
-      'evt_tgt_time_local','evt_tgt_time_z','evt_tgt_fuel','evt_tgt_pos',
-      'evt_ohd_time_local','evt_ohd_time_z','evt_ohd_fuel','evt_ohd_pos',
-      'evt_ds_time_local','evt_ds_time_z','evt_ds_fuel','evt_ds_pos',
-      'evt_sd_time_local','evt_sd_time_z','evt_sd_fuel','evt_sd_pos',
-      'comments'
-    ];
-    var o={};
-    for(var i=0;i<ids.length;i++){ var el=$(ids[i]); if(el) o[ids[i]]=el.value; }
-    var checks=['chk_weather','chk_notams','chk_fuelstop','chk_adiz','chk_sign','chk_ifr','chk_ops','chk_sap','chk_flightsurgeon','chk_extragear'];
-    for(i=0;i<checks.length;i++){ var c=$(checks[i]); if(c) o[checks[i]]=c.checked; }
-    return o;
-  }
-  function hydrate(o){
-    if(!o) return;
-    for(var k in o){ if(!o.hasOwnProperty(k)) continue; var el=$(k); if(!el) continue;
-      if(el.type==='checkbox') el.checked=!!o[k]; else el.value=o[k];
-      if(el.tagName==='TEXTAREA') autoGrow(el);
-    }
-  }
-  function onSave(){ try{ localStorage.setItem(FORM_ID, JSON.stringify(serialize())); flash('Saved locally.'); }catch(e){} }
-  function onLoad(){ try{ hydrate(JSON.parse(localStorage.getItem(FORM_ID)||'{}')); flash('Loaded from device.'); }catch(e){} }
-  function onReset(){ if(confirm('Clear all fields?')){ try{ localStorage.removeItem(FORM_ID); }catch(e){} var inputs=document.querySelectorAll('input,textarea'); for(var i=0;i<inputs.length;i++){ if(inputs[i].type==='checkbox') inputs[i].checked=false; else inputs[i].value=''; } flash('Cleared.'); } }
-  function onNight(){ document.body.classList.toggle('night'); try{ localStorage.setItem(FORM_ID+'_theme', document.body.classList.contains('night') ? 'night' : 'day'); }catch(e){} }
-  function onNow(){ var loc=hhmmLocalNow(), zul=hhmmZulu(loc); $('brief_current_time').value=loc; $('brief_current_time_z').value=zul; $('brief_call_time').value=loc; $('brief_call_time_z').value=zul; flash('Top times set.'); }
-
-  // Networking helpers
-  function setErr(id,msg){ var e=$(id); if(e) e.textContent=msg||''; }
-  function insertWeatherLine(text){ var wx=$('brief_weather'); wx.value = text + (wx.value?'\n'+wx.value:''); autoGrow(wx); }
-
-  function fetchJSON(url){ return fetch(url).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }); }
-  function fetchText(url){ return fetch(url).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); }); }
-
-  // METAR
-  function onMetar(){
-    setErr('metar_err','');
-    var st=($('metar_station').value||'KSFO').toUpperCase();
-    if(!/^[A-Z0-9]{3,4}$/.test(st)){ setErr('metar_err','Bad station code.'); return; }
-    var adds='https://aviationweather.gov/adds/dataserver_current/httpparam?datasource=metars&requestType=retrieve&format=JSON&stationString='+st+'&hoursBeforeNow=2';
-    fetchJSON(adds).then(function(d){
-      var m=(d&&d.data&&d.data.METAR)||[];
-      if(m.length){ insertWeatherLine(st+' METAR: '+(m[0].raw_text||'')); return; }
-      throw new Error('No ADDS');
-    }).catch(function(){
-      var tg='https://tgftp.nws.noaa.gov/data/observations/metar/stations/'+st+'.TXT';
-      fetchText(tg).then(function(t){
-        var lines=t.split(/\r?\n/).filter(Boolean), raw=lines.pop()||'';
-        if(raw){ insertWeatherLine(st+' METAR: '+raw); return; }
-        throw new Error('No TGFTP');
-      }).catch(function(){
-        var mir='https://r.jina.ai/http://tgftp.nws.noaa.gov/data/observations/metar/stations/'+st+'.TXT';
-        fetchText(mir).then(function(t2){
-          var lines=t2.split(/\r?\n/).filter(Boolean), raw=lines.pop()||'';
-          if(raw){ insertWeatherLine(st+' METAR: '+raw); return; }
-          setErr('metar_err','METAR fetch failed.');
-        }).catch(function(){ setErr('metar_err','METAR fetch failed.'); });
-      });
-    });
-  }
-
-  // Parse "3655.39N/12208.28W"
-  function parseLatLonDM(s){
-    if(!s) return null;
-    s=s.trim().toUpperCase();
-    var m=s.match(/^(\d{2})(\d{2}\.\d+)\s*([NS])\s*\/\s*(\d{3})(\d{2}\.\d+)\s*([EW])$/);
-    if(!m) return null;
-    var dlat=parseInt(m[1],10), mlat=parseFloat(m[2]), n=m[3];
-    var dlon=parseInt(m[4],10), mlon=parseFloat(m[5]), e=m[6];
-    var lat=(dlat+mlat/60)*(n==='S'?-1:1);
-    var lon=(dlon+mlon/60)*(e==='W'?-1:1);
-    return {lat:lat, lon:lon};
-  }
-
-  function ktsFromMps(mps){ return Math.round(mps*1.94384); }
-  function miFromMeters(m){ return (m==null)?'':(m/1609.344).toFixed(1); }
-  function fFromC(c){ return (c==null)?'':Math.round(c*9/5+32); }
-  function ftFromMeters(m){ return (m==null)?'':Math.round(m*3.28084); }
-  function inHgFromPa(pa){ if(pa==null) return ''; return (pa/3386.389).toFixed(2); }
-  function lowestCeilingFt(cloudLayers){
-    if(!cloudLayers||!cloudLayers.length) return ['',''];
-    var best=null;
-    for(var i=0;i<cloudLayers.length;i++){
-      var layer=cloudLayers[i];
-      var amt=layer.amount, base=layer.base&&layer.base.value;
-      if(!base||!amt) continue;
-      if(amt==='BKN'||amt==='OVC'){
-        var ft=ftFromMeters(base);
-        if(best===null||ft<best[1]) best=[amt,ft];
-      }
-    }
-    return best||['',''];
-  }
-  function flightCategory(ceilFt, visMi){
-    var v=parseFloat(visMi), c=parseFloat(ceilFt);
-    if((c && c < 500) || (v && v < 1)) return 'LIFR';
-    if((c && c < 1000) || (v && v < 3)) return 'IFR';
-    if((c && c < 3000) || (v && v < 5)) return 'MVFR';
-    return 'VFR';
-  }
-  function getJSONFallback(u1,u2){ return fetchJSON(u1).catch(function(){ return fetchJSON(u2); }); }
-
-  function onPointAvi(){
-    var s=$('brief_location').value, pt=parseLatLonDM(s);
-    if(!pt){ setErr('onscene_err','Enter lat/long like 3655.39N/12208.28W'); return; }
-    setErr('onscene_err','');
-    var src=$('onscene_src'); if(src) src.textContent='';
-    getJSONFallback('https://api.weather.gov/points/'+pt.lat+','+pt.lon,'https://r.jina.ai/http://api.weather.gov/points/'+pt.lat+','+pt.lon)
-    .then(function(points){
-      var props=points&&points.properties; if(!props) throw new Error('no props');
-      return fetchJSON(props.observationStations).catch(function(){
-        return fetchJSON('https://r.jina.ai/http://api.weather.gov/gridpoints/'+props.gridId+'/'+props.gridX+','+props.gridY+'/stations');
-      }).then(function(sts){ return {props:props, sts:sts}; });
-    }).then(function(ctx){
-      var stId=null; try{ stId=ctx.sts.features[0].properties.stationIdentifier; }catch(e){}
-      if(!stId) throw new Error('no station');
-      return fetchJSON('https://api.weather.gov/stations/'+stId+'/observations/latest')
-        .catch(function(){ return fetchJSON('https://r.jina.ai/http://api.weather.gov/stations/'+stId+'/observations/latest'); })
-        .then(function(obs){ return {stId:stId, obs:obs}; });
-    }).then(function(pkg){
-      var p=pkg.obs&&pkg.obs.properties; if(!p) throw new Error('no obs');
-      var windKt=p.windSpeed&&p.windSpeed.value!=null?ktsFromMps(p.windSpeed.value):'';
-      var windDir=p.windDirection&&p.windDirection.value!=null?Math.round(p.windDirection.value):null;
-      var visMi=p.visibility&&p.visibility.value!=null?miFromMeters(p.visibility.value):'';
-      var tempF=p.temperature&&p.temperature.value!=null?fFromC(p.temperature.value):'';
-      var altIn=inHgFromPa(p.barometricPressure&&p.barometricPressure.value);
-      var ceil=lowestCeilingFt(p.cloudLayers||[]);
-      var cat=flightCategory(ceil[1], visMi);
-      if($('os_wind')) $('os_wind').value=(windKt?windKt+' kt ':'')+(windDir!=null?windDir+'°':'');
-      if($('os_vis')) $('os_vis').value=visMi?visMi+' mi':'';
-      if($('os_airtemp')) $('os_airtemp').value=tempF?tempF+'°F':'';
-      if($('os_ceiling')) $('os_ceiling').value=ceil[1]?ceil[1]+' ft '+ceil[0]:'';
-      if($('onscene_src')) $('onscene_src').textContent='Obs station '+pkg.stId;
-      var ll = (pt.lat.toFixed?pt.lat.toFixed(3):pt.lat)+','+(pt.lon.toFixed?pt.lon.toFixed(3):pt.lon);
-      var parts=[];
-      if(windDir!=null||windKt) parts.push('Winds '+(windDir!=null?windDir+'°/':'')+(windKt||'')+'kt');
-      if(visMi) parts.push('Vis '+visMi+'sm');
-      if(ceil[1]) parts.push('Ceil '+ceil[1]+' ft '+ceil[0]);
-      if(tempF!=='') parts.push('Temp '+tempF+'F');
-      if(altIn) parts.push('Alt '+altIn+'inHg');
-      parts.push('Cat '+cat);
-      insertWeatherLine('Point Wx '+ll+': '+parts.join(', '));
-    }).catch(function(){ setErr('onscene_err','Point lookup failed.'); });
-  }
-
-  function onOnScene(){
-    var s=$('brief_location').value, pt=parseLatLonDM(s);
-    if(!pt){ setErr('onscene_err','Enter lat/long like 3655.39N/12208.28W'); return; }
-    setErr('onscene_err','');
-    var src=$('onscene_src'); if(src) src.textContent='';
-    var p1='https://api.weather.gov/points/'+pt.lat+','+pt.lon, p2='https://r.jina.ai/http://api.weather.gov/points/'+pt.lat+','+pt.lon;
-    fetchJSON(p1).catch(function(){ return fetchJSON(p2); }).then(function(points){
-      var props=points&&points.properties; if(!props) throw new Error('no props');
-      return fetchJSON(props.observationStations).catch(function(){
-        return fetchJSON('https://r.jina.ai/http://api.weather.gov/gridpoints/'+props.gridId+'/'+props.gridX+','+props.gridY+'/stations');
-      }).then(function(sts){ return {props:props, sts:sts}; });
-    }).then(function(ctx){
-      var stId=null; try{ stId=ctx.sts.features[0].properties.stationIdentifier; }catch(e){}
-      if(!stId) throw new Error('no station');
-      return fetchJSON('https://api.weather.gov/stations/'+stId+'/observations/latest')
-        .catch(function(){ return fetchJSON('https://r.jina.ai/http://api.weather.gov/stations/'+stId+'/observations/latest'); });
-    }).then(function(latest){
-      var p=latest&&latest.properties; if(!p) throw new Error('no obs');
-      var windKt=p.windSpeed&&p.windSpeed.value!=null?Math.round(p.windSpeed.value*1.94384):'';
-      var windDir=p.windDirection&&p.windDirection.value!=null?Math.round(p.windDirection.value):null;
-      var vis=p.visibility&&p.visibility.value!=null?(p.visibility.value/1609.344).toFixed(1):'';
-      var temp=p.temperature&&p.temperature.value!=null?Math.round(p.temperature.value*9/5+32):'';
-      if($('os_wind')) $('os_wind').value=(windKt?windKt+' kt ':'')+(windDir!=null?windDir+'°':'');
-      if($('os_vis')) $('os_vis').value=vis?vis+' mi':'';
-      if($('os_airtemp')) $('os_airtemp').value=temp?temp+'°F':'';
-      if(src) src.textContent='Obs: station set';
-      flash('On‑scene weather updated.');
-    }).catch(function(){ setErr('onscene_err','On‑scene lookup failed.'); });
-  }
-
-  function onGPS(){
-    if(!navigator.geolocation){ setErr('onscene_err','Geolocation not available.'); return; }
-    navigator.geolocation.getCurrentPosition(function(pos){
-      var lat=pos.coords.latitude, lon=pos.coords.longitude;
-      function toDMM(value, isLat){
-        var hem = isLat ? (value>=0?'N':'S') : (value>=0?'E':'W');
-        var abs=Math.abs(value);
-        var d=Math.floor(abs);
-        var m=(abs-d)*60;
-        return (isLat?String(d).padStart(2,'0'):String(d).padStart(3,'0')) + m.toFixed(2).padStart(5,'0') + hem;
-      }
-      $('brief_location').value = toDMM(lat,true)+'/'+toDMM(lon,false);
-      onOnScene();
-    }, function(){ setErr('onscene_err','GPS denied.'); }, {enableHighAccuracy:true, timeout:8000, maximumAge:0});
-  }
-
-  // Autosave heartbeat
-  setInterval(function(){ try{ localStorage.setItem(FORM_ID, JSON.stringify(serialize())); }catch(e){} }, 5000);
-  // Initial hydrate
-  try{ hydrate(JSON.parse(localStorage.getItem(FORM_ID)||'{}')); }catch(e){}
-</script>
+<script src="app.js" defer></script>
 </body>
 </html>
