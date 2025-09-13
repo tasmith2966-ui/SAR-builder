@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SAR Kneeboard</title>
+<style>
+  :root{
+    --bg:#0b0b0c;
+    --card:#141417;
+    --ink:#e9e9ef;
+    --muted:#b9b9c6;
+    --line:#2a2a31;
+    --accent:#4da3ff;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font:16px -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height:1.3;
+  }
+  header{
+    position:sticky; top:0; z-index:20;
+    background:linear-gradient(180deg,var(--bg),rgba(11,11,12,.85) 60%, rgba(11,11,12,0));
+    backdrop-filter:saturate(140%) blur(8px);
+    padding:10px 12px 6px;
+    border-bottom:1px solid var(--line);
+  }
+  header h1{margin:0; font-size:18px; letter-spacing:.5px}
+  header .btns{margin-top:8px; display:flex; flex-wrap:wrap; gap:8px}
+  button{
+    background:#1d2936;
+    color:var(--ink);
+    border:1px solid #2c3e50;
+    border-radius:10px;
+    padding:10px 12px;
+    font-weight:600;
+    font-size:14px;
+  }
+  button.primary{background:var(--accent); color:#02172a; border-color:#5cb0ff}
+  main{padding:10px 12px 80px; max-width:900px; margin:0 auto}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px;
+    margin:12px 0;
+  }
+  .card h2{margin:0 0 10px; font-size:16px; letter-spacing:.3px}
+  label{display:block; color:var(--muted); font-size:12px; margin:10px 0 6px}
+  input[type="text"], input[type="number"], input[type="time"], input[type="date"], textarea, select{
+    width:100%;
+    background:#0f0f13;
+    color:var(--ink);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:16px;
+  }
+  textarea{min-height:72px; resize:vertical}
+  .grid{display:grid; gap:8px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media (min-width:680px){
+    .g2-md{grid-template-columns:repeat(2,1fr)}
+    .g3-md{grid-template-columns:repeat(3,1fr)}
+    .g4-md{grid-template-columns:repeat(4,1fr)}
+  }
+  .row{display:flex; gap:8px}
+  .row > *{flex:1}
+  .tbl{width:100%; border-collapse:collapse; font-size:14px}
+  .tbl th,.tbl td{border:1px solid var(--line); padding:6px 6px; text-align:left}
+  .tbl th{color:var(--muted); font-weight:600; background:#111115}
+  .muted{color:var(--muted)}
+  .checklist label{display:flex; align-items:center; gap:10px; padding:8px 0; margin:0; border-bottom:1px dashed #22222a}
+  .checklist input{width:22px; height:22px}
+  .footer-note{color:#9aa3ad; font-size:12px; text-align:center; margin-top:12px}
+  .inline{display:flex; gap:8px; align-items:flex-end}
+  .inline > div{flex:1}
+  .err{color:#ffb4b4; font-size:12px; margin-top:6px}
+  .btnline{display:flex; gap:8px; flex-wrap:wrap}
+  .sublabel{display:flex; align-items:center; justify-content:space-between}
+  .mini{font-size:11px; color:#9aa3ad}
+  .timepair{display:flex; gap:8px; align-items:center}
+  .timepair .z{flex:0 0 110px}
+  .timepair .z label{margin:0 0 4px}
+  .timepair input[type="time"]{height:38px}
+</style>
+</head>
+<body>
+<header>
+  <h1>SAR Kneeboard</h1>
+  <div class="btns">
+    <button class="primary" id="btnSave">Save</button>
+    <button id="btnLoad">Load</button>
+    <button id="btnExport">Export</button>
+    <button id="btnPrint">Print/PDF</button>
+    <button id="btnReset">Reset</button>
+    <button id="btnNow">Now→Times</button>
+  </div>
+</header>
+
+<main>
+  <form id="form">
+    <div class="card">
+      <h2>Operation’s Officer Brief</h2>
+      <div class="grid g2 g2-md">
+        <div>
+          <label>Current time</label>
+          <div class="timepair">
+            <input type="time" id="brief_current_time" name="brief_current_time">
+            <div class="z">
+              <label class="mini">Zulu</label>
+              <input type="time" id="brief_current_time_z" name="brief_current_time_z">
+            </div>
+          </div>
+        </div>
+        <div>
+          <label>SAR Call received (time)</label>
+          <div class="timepair">
+            <input type="time" id="brief_call_time" name="brief_call_time">
+            <div class="z">
+              <label class="mini">Zulu</label>
+              <input type="time" id="brief_call_time_z" name="brief_call_time_z">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sublabel">
+        <label>Location (Lat, Long)</label>
+        <div class="btnline">
+          <button type="button" id="btnUseGPS">Use GPS</button>
+          <button type="button" id="btnOnScene">Fetch On-Scene Wx</button>
+        </div>
+      </div>
+      <input type="text" id="brief_location" name="brief_location" placeholder="37.619,-122.375 or 37°37.1'N 122°22.5'W">
+      <div id="onscene_err" class="err"></div>
+      <label>Search Object</label>
+      <input type="text" id="brief_search_object" name="brief_search_object" placeholder="e.g., 21-ft whaler white hull, 2 POB">
+      <label>Tasking</label>
+      <textarea id="brief_tasking" name="brief_tasking"></textarea>
+      <div class="grid g2 g2-md">
+        <div>
+          <label>Reporting Source</label>
+          <input type="text" id="brief_reporting_source" name="brief_reporting_source">
+        </div>
+        <div>
+          <label>Other Assets Responding</label>
+          <input type="text" id="brief_other_assets" name="brief_other_assets">
+        </div>
+      </div>
+      <div class="inline">
+        <div>
+          <label>Weather</label>
+          <textarea id="brief_weather" name="brief_weather" placeholder="Press Fetch METAR to auto-fill"></textarea>
+          <div id="metar_err" class="err"></div>
+        </div>
+        <div style="flex:0 0 220px">
+          <label>METAR Station</label>
+          <div class="row">
+            <input type="text" id="metar_station" value="KSFO" placeholder="e.g., KSFO">
+            <button type="button" id="btnMetar">Fetch METAR</button>
+          </div>
+          <div class="mini">Local files can block network; v5 uses multiple fallbacks.</div>
+        </div>
+      </div>
+      <label>Fuel Plan</label>
+      <textarea id="brief_fuel_plan" name="brief_fuel_plan"></textarea>
+    </div>
+
+    <div class="card">
+      <h2>Search Object Details</h2>
+      <div class="grid g3 g3-md">
+        <div><label>Name</label><input type="text" name="so_name"></div>
+        <div><label>Length</label><input type="text" name="so_length"></div>
+        <div><label>Type</label><input type="text" name="so_type"></div>
+        <div><label>Color</label><input type="text" name="so_color"></div>
+        <div><label>POB</label><input type="text" name="so_pob"></div>
+        <div><label>Position</label><input type="text" name="so_position"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>On-Scene Weather</h2>
+      <div class="grid g3 g3-md">
+        <div><label>Wind</label><input type="text" name="os_wind" id="os_wind"></div>
+        <div><label>Ceiling</label><input type="text" name="os_ceiling" id="os_ceiling"></div>
+        <div><label>Visibility</label><input type="text" name="os_vis" id="os_vis"></div>
+        <div><label>Air Temp</label><input type="text" name="os_airtemp" id="os_airtemp"></div>
+        <div><label>Seas</label><input type="text" name="os_seas" id="os_seas"></div>
+        <div><label>Swells</label><input type="text" name="os_swells" id="os_swells"></div>
+      </div>
+      <div class="mini" id="onscene_src"></div>
+    </div>
+
+    <div class="card">
+      <h2>Pre-Ramp Checklist</h2>
+      <div class="checklist" id="preRamp">
+        <label><input type="checkbox" name="chk_weather">Check Weather</label>
+        <label><input type="checkbox" name="chk_notams">Check NOTAMs</label>
+        <label><input type="checkbox" name="chk_fuelstop">Fuel / Defuel? Next Fuel Stop</label>
+        <label><input type="checkbox" name="chk_adiz">Coordinate ADIZ / Warning Areas</label>
+        <label><input type="checkbox" name="chk_sign">Sign for Aircraft</label>
+        <label><input type="checkbox" name="chk_ifr">File IFR Flight Plan</label>
+        <label><input type="checkbox" name="chk_ops">Call Ops</label>
+        <label><input type="checkbox" name="chk_sap">Search Action Plan from Sector</label>
+        <label><input type="checkbox" name="chk_flightsurgeon">Call Flight Surgeon</label>
+        <label><input type="checkbox" name="chk_extragear">Extra gear (litter, SLDMB, Nightsun)</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Search Data</h2>
+      <div class="grid g3 g3-md">
+        <div><label>CPT</label><input type="text" name="sd_cpt"></div>
+        <div><label>Leg</label><input type="text" name="sd_leg"></div>
+        <div><label>Width</label><input type="text" name="sd_width"></div>
+        <div><label>T/S</label><input type="text" name="sd_ts"></div>
+        <div><label>Creep</label><input type="text" name="sd_creep"></div>
+        <div><label>CSP</label><input type="text" name="sd_csp"></div>
+        <div><label>1st Turn</label><input type="text" name="sd_first"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Mission Log</h2>
+      <div class="grid g3 g3-md">
+        <div><label>Date</label><input type="date" name="log_date"></div>
+        <div><label>UCN</label><input type="text" name="log_ucn"></div>
+        <div><label>MISLE</label><input type="text" name="log_misle"></div>
+        <div><label>A/C</label><input type="text" name="log_ac"></div>
+        <div><label>Pilot</label><input type="text" name="log_pilot"></div>
+      </div>
+      <div style="height:8px"></div>
+      <table class="tbl">
+        <thead><tr><th style="width:22%">Event</th><th>Time (Local)</th><th>Time (Z)</th><th>Fuel</th><th>Position</th></tr></thead>
+        <tbody>
+          <tr><td>REQ</td>
+            <td><input type="time" name="evt_req_time_local"></td>
+            <td><input type="time" name="evt_req_time_z"></td>
+            <td><input type="text" name="evt_req_fuel" placeholder="lbs/gal"></td>
+            <td><input type="text" name="evt_req_pos" placeholder="lat/long or fix"></td></tr>
+          <tr><td>T/O</td>
+            <td><input type="time" name="evt_to_time_local"></td>
+            <td><input type="time" name="evt_to_time_z"></td>
+            <td><input type="text" name="evt_to_fuel"></td>
+            <td><input type="text" name="evt_to_pos"></td></tr>
+          <tr><td>CSP O/S</td>
+            <td><input type="time" name="evt_csp_time_local"></td>
+            <td><input type="time" name="evt_csp_time_z"></td>
+            <td><input type="text" name="evt_csp_fuel"></td>
+            <td><input type="text" name="evt_csp_pos"></td></tr>
+          <tr><td>TGT LOC</td>
+            <td><input type="time" name="evt_tgt_time_local"></td>
+            <td><input type="time" name="evt_tgt_time_z"></td>
+            <td><input type="text" name="evt_tgt_fuel"></td>
+            <td><input type="text" name="evt_tgt_pos"></td></tr>
+          <tr><td>OHD</td>
+            <td><input type="time" name="evt_ohd_time_local"></td>
+            <td><input type="time" name="evt_ohd_time_z"></td>
+            <td><input type="text" name="evt_ohd_fuel"></td>
+            <td><input type="text" name="evt_ohd_pos"></td></tr>
+          <tr><td>D/S</td>
+            <td><input type="time" name="evt_ds_time_local"></td>
+            <td><input type="time" name="evt_ds_time_z"></td>
+            <td><input type="text" name="evt_ds_fuel"></td>
+            <td><input type="text" name="evt_ds_pos"></td></tr>
+          <tr><td>S/D</td>
+            <td><input type="time" name="evt_sd_time_local"></td>
+            <td><input type="time" name="evt_sd_time_z"></td>
+            <td><input type="text" name="evt_sd_fuel"></td>
+            <td><input type="text" name="evt_sd_pos"></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Comments</h2>
+      <textarea name="comments" placeholder="Freeform notes, comms snippets, frequencies, coordinates, etc."></textarea>
+      <div class="footer-note">Autosaves every 5 seconds. Network only needed for METAR and On-Scene fetch.</div>
+    </div>
+  </form>
+</main>
+
+<script>
+  const FORM_ID = 'sar_kneeboard_v5';
+  const $ = sel => document.querySelector(sel);
+
+  function setErr(id,msg){ const e=$(id); if(e){ e.textContent = msg||''; } }
+
+  function autoGrow(el){
+    el.style.height = 'auto';
+    el.style.height = (el.scrollHeight+2)+'px';
+  }
+  document.querySelectorAll('textarea').forEach(t=>{
+    t.addEventListener('input', ()=>autoGrow(t));
+    autoGrow(t);
+  });
+
+  function getFormData(){
+    const fd = new FormData($('#form'));
+    const obj = {};
+    for (const [k,v] of fd.entries()){
+      if(obj[k] !== undefined){
+        if(!Array.isArray(obj[k])) obj[k]=[obj[k]];
+        obj[k].push(v);
+      } else {
+        obj[k] = v;
+      }
+    }
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+      obj[cb.name] = cb.checked;
+    });
+    return obj;
+  }
+  function setFormData(obj){
+    if(!obj) return;
+    for (const [k,v] of Object.entries(obj)){
+      const el = document.querySelector(`[name="${CSS.escape(k)}"]`) || document.getElementById(k);
+      if(!el) continue;
+      if(el.type === 'checkbox') el.checked = !!v;
+      else el.value = v;
+      if(el.tagName==='TEXTAREA') autoGrow(el);
+    }
+  }
+
+  $('#btnSave').addEventListener('click', ()=>{
+    localStorage.setItem(FORM_ID, JSON.stringify(getFormData()));
+    flash('Saved locally.');
+  });
+  $('#btnLoad').addEventListener('click', ()=>{
+    setFormData(JSON.parse(localStorage.getItem(FORM_ID) || '{}'));
+    flash('Loaded from device.');
+  });
+  $('#btnReset').addEventListener('click', ()=>{
+    if(confirm('Clear all fields?')){
+      localStorage.removeItem(FORM_ID);
+      $('#form').reset();
+      flash('Cleared.');
+    }
+  });
+
+  function fmtHM(n){ return String(n).padStart(2,'0'); }
+  function localHHMM(d){ return fmtHM(d.getHours())+':'+fmtHM(d.getMinutes()); }
+  function zuluHHMM(d){ return fmtHM(d.getUTCHours())+':'+fmtHM(d.getUTCMinutes()); }
+
+  $('#btnNow').addEventListener('click', ()=>{
+    const now = new Date();
+    const map = [
+      ['brief_current_time', 'brief_current_time_z'],
+      ['brief_call_time', 'brief_call_time_z']
+    ];
+    map.forEach(([l,z])=>{
+      const le = document.getElementById(l);
+      const ze = document.getElementById(z);
+      if(le) le.value = localHHMM(now);
+      if(ze) ze.value = zuluHHMM(now);
+    });
+    const pairs = [
+      ['evt_req_time_local','evt_req_time_z'],
+      ['evt_to_time_local','evt_to_time_z'],
+      ['evt_csp_time_local','evt_csp_time_z'],
+      ['evt_tgt_time_local','evt_tgt_time_z'],
+      ['evt_ohd_time_local','evt_ohd_time_z'],
+      ['evt_ds_time_local','evt_ds_time_z'],
+      ['evt_sd_time_local','evt_sd_time_z']
+    ];
+    pairs.forEach(([l,z])=>{
+      const le = document.querySelector(`[name="${l}"]`);
+      const ze = document.querySelector(`[name="${z}"]`);
+      if(le) le.value = localHHMM(now);
+      if(ze) ze.value = zuluHHMM(now);
+    });
+    flash('Times set to current (local + Z).');
+  });
+
+  function attachTimeSync(localSel, zSel){
+    const le = document.getElementById(localSel) || document.querySelector(`[name="${localSel}"]`);
+    const ze = document.getElementById(zSel) || document.querySelector(`[name="${zSel}"]`);
+    if(!le || !ze) return;
+    le.addEventListener('change', ()=>{
+      const now = new Date();
+      const offsetMin = (now.getTimezoneOffset());
+      const [hh, mm] = le.value.split(':').map(x=>parseInt(x||'0',10));
+      if(!isFinite(hh) || !isFinite(mm)) return;
+      const d = new Date();
+      d.setHours(hh); d.setMinutes(mm);
+      d.setMinutes(d.getMinutes() + offsetMin);
+      ze.value = zuluHHMM(d);
+    });
+  }
+  [['brief_current_time','brief_current_time_z'],
+   ['brief_call_time','brief_call_time_z'],
+   ['evt_req_time_local','evt_req_time_z'],
+   ['evt_to_time_local','evt_to_time_z'],
+   ['evt_csp_time_local','evt_csp_time_z'],
+   ['evt_tgt_time_local','evt_tgt_time_z'],
+   ['evt_ohd_time_local','evt_ohd_time_z'],
+   ['evt_ds_time_local','evt_ds_time_z'],
+   ['evt_sd_time_local','evt_sd_time_z']].forEach(p=>attachTimeSync(p[0],p[1]));
+
+  $('#btnPrint').addEventListener('click', ()=>{
+    window.print();
+  });
+
+  function toMarkdown(obj){
+    function val(k){ return obj[k] ?? ''; }
+    const md = `# SAR Kneeboard\n
+## Operation’s Officer Brief
+- Current time: ${val('brief_current_time')} (Z ${val('brief_current_time_z')})
+- SAR Call received: ${val('brief_call_time')} (Z ${val('brief_call_time_z')})
+- Location: ${val('brief_location')}
+- Search Object: ${val('brief_search_object')}
+- Tasking: ${val('brief_tasking')}
+- Reporting Source: ${val('brief_reporting_source')}
+- Other Assets: ${val('brief_other_assets')}
+- Weather: ${val('brief_weather')}
+- Fuel Plan: ${val('brief_fuel_plan')}
+
+## Search Object
+Name ${val('so_name')} | Length ${val('so_length')} | Type ${val('so_type')} | Color ${val('so_color')} | POB ${val('so_pob')} | Position ${val('so_position')}
+
+## On-Scene Weather
+Wind ${val('os_wind')} | Ceiling ${val('os_ceiling')} | Visibility ${val('os_vis')} | Air Temp ${val('os_airtemp')} | Seas ${val('os_seas')} | Swells ${val('os_swells')}
+
+## Pre-Ramp Checklist
+- Weather: ${obj['chk_weather']?'✔︎':'□'}
+- NOTAMs: ${obj['chk_notams']?'✔︎':'□'}
+- Fuel/Defuel: ${obj['chk_fuelstop']?'✔︎':'□'}
+- ADIZ/Warning Areas: ${obj['chk_adiz']?'✔︎':'□'}
+- Sign for Aircraft: ${obj['chk_sign']?'✔︎':'□'}
+- File IFR: ${obj['chk_ifr']?'✔︎':'□'}
+- Call Ops: ${obj['chk_ops']?'✔︎':'□'}
+- SAP from Sector: ${obj['chk_sap']?'✔︎':'□'}
+- Call Flight Surgeon: ${obj['chk_flightsurgeon']?'✔︎':'□'}
+- Extra gear: ${obj['chk_extragear']?'✔︎':'□'}
+
+## Search Data
+CPT ${val('sd_cpt')} | Leg ${val('sd_leg')} | Width ${val('sd_width')} | T/S ${val('sd_ts')} | Creep ${val('sd_creep')} | CSP ${val('sd_csp')} | 1st Turn ${val('sd_first')}
+
+## Mission Log
+- Date: ${val('log_date')}  UCN: ${val('log_ucn')}  MISLE: ${val('log_misle')}  A/C: ${val('log_ac')}  Pilot: ${val('log_pilot')}
+- Events:
+  - REQ ${val('evt_req_time_local')}L/${val('evt_req_time_z')}Z | Fuel ${val('evt_req_fuel')} | Pos ${val('evt_req_pos')}
+  - T/O ${val('evt_to_time_local')}L/${val('evt_to_time_z')}Z | Fuel ${val('evt_to_fuel')} | Pos ${val('evt_to_pos')}
+  - CSP O/S ${val('evt_csp_time_local')}L/${val('evt_csp_time_z')}Z | Fuel ${val('evt_csp_fuel')} | Pos ${val('evt_csp_pos')}
+  - TGT LOC ${val('evt_tgt_time_local')}L/${val('evt_tgt_time_z')}Z | Fuel ${val('evt_tgt_fuel')} | Pos ${val('evt_tgt_pos')}
+  - OHD ${val('evt_ohd_time_local')}L/${val('evt_ohd_time_z')}Z | Fuel ${val('evt_ohd_fuel')} | Pos ${val('evt_ohd_pos')}
+  - D/S ${val('evt_ds_time_local')}L/${val('evt_ds_time_z')}Z | Fuel ${val('evt_ds_fuel')} | Pos ${val('evt_ds_pos')}
+  - S/D ${val('evt_sd_time_local')}L/${val('evt_sd_time_z')}Z | Fuel ${val('evt_sd_fuel')} | Pos ${val('evt_sd_pos')}
+
+## Comments
+${val('comments')}
+`;
+    return md;
+  }
+
+  async function exportShare(){
+    const data = getFormData();
+    const md = toMarkdown(data);
+    const blob = new Blob([md], {type:'text/plain'});
+    const file = new File([blob], 'sar_kneeboard.txt', {type:'text/plain'});
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+      try{
+        await navigator.share({title:'SAR Kneeboard', text:'SAR Kneeboard export', files:[file]});
+      }catch(e){ console.log(e); }
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'sar_kneeboard.txt';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      alert('Exported as text file (download).');
+    }
+  }
+  $('#btnExport').addEventListener('click', exportShare);
+
+  setInterval(()=>{
+    localStorage.setItem(FORM_ID, JSON.stringify(getFormData()));
+  }, 5000);
+
+  setFormData(JSON.parse(localStorage.getItem(FORM_ID) || '{}'));
+
+  function flash(msg){
+    const el = document.createElement('div');
+    el.textContent = msg;
+    el.style.position='fixed';
+    el.style.bottom='16px';
+    el.style.left='50%';
+    el.style.transform='translateX(-50%)';
+    el.style.background='rgba(77,163,255,.95)';
+    el.style.color='#031826';
+    el.style.padding='10px 14px';
+    el.style.borderRadius='10px';
+    el.style.fontWeight='700';
+    el.style.zIndex='9999';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(), 1600);
+  }
+
+  async function fetchText(url){ const r=await fetch(url); if(!r.ok) throw new Error('HTTP '+r.status); return await r.text(); }
+  async function fetchJSON(url){ const r=await fetch(url); if(!r.ok) throw new Error('HTTP '+r.status); return await r.json(); }
+  function insertWx(station, text){
+    const wxBox = document.getElementById('brief_weather');
+    const line = `${station} METAR: ${text}`.trim();
+    wxBox.value = line + (wxBox.value ? `\n${wxBox.value}` : '');
+    autoGrow(wxBox);
+    flash('METAR inserted.');
+  }
+  async function getMETAR(station){
+    setErr('#metar_err','');
+    station = String(station||'KSFO').trim().toUpperCase();
+    if(!/^[A-Z0-9]{3,4}$/.test(station)){ setErr('#metar_err','Bad station code.'); return; }
+    const adds = `https://aviationweather.gov/adds/dataserver_current/httpparam?datasource=metars&requestType=retrieve&format=JSON&stationString=${station}&hoursBeforeNow=2`;
+    try{
+      const data = await fetchJSON(adds);
+      const metars = data?.data?.METAR || [];
+      if(metars.length){ insertWx(station, metars[0].raw_text||''); return; }
+      throw new Error('No ADDS');
+    }catch(e){}
+    const tgftp = `https://tgftp.nws.noaa.gov/data/observations/metar/stations/${station}.TXT`;
+    try{
+      const t1 = await fetchText(tgftp);
+      const lines = t1.split(/\r?\n/).filter(Boolean);
+      const raw = lines.pop() || '';
+      if(raw){ insertWx(station, raw); return; }
+      throw new Error('No TGFTP');
+    }catch(e){}
+    const mirror = `https://r.jina.ai/http://tgftp.nws.noaa.gov/data/observations/metar/stations/${station}.TXT`;
+    try{
+      const t2 = await fetchText(mirror);
+      const lines = t2.split(/\r?\n/).filter(Boolean);
+      const raw = lines.pop() || '';
+      if(raw){ insertWx(station, raw); return; }
+      throw new Error('No mirror');
+    }catch(e){
+      setErr('#metar_err','METAR fetch failed (CORS or network).');
+    }
+  }
+  document.getElementById('btnMetar').addEventListener('click', ()=>{
+    const stn = document.getElementById('metar_station').value || 'KSFO';
+    getMETAR(stn);
+  });
+
+  function parseLatLon(s){
+    if(!s) return null;
+    s = s.trim();
+    let m = s.match(/^\s*([-+]?\d+(\.\d+)?)\s*,\s*([-+]?\d+(\.\d+)?)\s*$/);
+    if(m) return {lat: parseFloat(m[1]), lon: parseFloat(m[3])};
+    m = s.match(/(\d+(?:\.\d+)?)\D+([NS])[^0-9\-+]+(\d+(?:\.\d+)?)\D+([EW])/i);
+    if(m){
+      const latdeg = parseFloat(m[1]);
+      const londeg = parseFloat(m[3]);
+      const lat = /S/i.test(m[2]) ? -latdeg : latdeg;
+      const lon = /W/i.test(m[4]) ? -londeg : londeg;
+      return {lat, lon};
+    }
+    return null;
+  }
+  function ktsFromMps(mps){ return Math.round((mps*1.94384)); }
+  function degStr(deg){ return (deg===null||deg===undefined) ? '' : Math.round(deg) + '°'; }
+  function miFromMeters(m){ return (m==null)?'':(m/1609.344).toFixed(1)+' mi'; }
+  function fFromC(c){ return (c==null)?'':Math.round(c*9/5+32)+'°F'; }
+  function ftFromMeters(m){ return (m==null)?'':Math.round(m*3.28084)+' ft'; }
+  function ftFromMetersWave(m){ return (m==null)?'':(m*3.28084).toFixed(1)+' ft'; }
+
+  async function getJSONWithFallbacks(urls){
+    for(const u of urls){
+      try{ return await fetchJSON(u); }catch(e) {}
+    }
+    throw new Error('All JSON fallbacks failed');
+  }
+
+  async function fetchOnScene(lat, lon){
+    setErr('#onscene_err','');
+    const src = document.getElementById('onscene_src');
+    if(src) src.textContent = '';
+    const p1 = `https://api.weather.gov/points/${lat},${lon}`;
+    const p2 = `https://r.jina.ai/http://api.weather.gov/points/${lat},${lon}`;
+    let points;
+    try{
+      points = await getJSONWithFallbacks([p1, p2]);
+    }catch(e){
+      setErr('#onscene_err','On-scene lookup failed (points).'); return;
+    }
+    const props = points && points.properties;
+    if(!props){ setErr('#onscene_err','Bad response for points.'); return; }
+
+    let obsStationsUrl = props.observationStations;
+    if(!obsStationsUrl){ setErr('#onscene_err','No observation stations for this location.'); return; }
+    let stations;
+    try{
+      stations = await getJSONWithFallbacks([obsStationsUrl, `https://r.jina.ai/http://api.weather.gov/gridpoints/${props.gridId}/${props.gridX},${props.gridY}/stations`]);
+    }catch(e){ stations=null; }
+    let stId;
+    try{
+      stId = (stations.features && stations.features[0] && stations.features[0].properties.stationIdentifier) || null;
+    }catch(e){ stId = null; }
+
+    if(stId){
+      const latest1 = `https://api.weather.gov/stations/${stId}/observations/latest`;
+      const latest2 = `https://r.jina.ai/http://api.weather.gov/stations/${stId}/observations/latest`;
+      try{
+        const latest = await getJSONWithFallbacks([latest1, latest2]);
+        const p = latest && latest.properties;
+        if(p){
+          const windKt = (p.windSpeed && p.windSpeed.value!=null) ? ktsFromMps(p.windSpeed.value) : '';
+          const windDir = (p.windDirection && p.windDirection.value!=null) ? Math.round(p.windDirection.value) : null;
+          const vis = (p.visibility && p.visibility.value!=null) ? miFromMeters(p.visibility.value) : '';
+          const temp = (p.temperature && p.temperature.value!=null) ? fFromC(p.temperature.value) : '';
+          const w = (windKt? windKt+' kt ' : '') + (windDir!=null? degStr(windDir):'');
+          const wEl = document.getElementById('os_wind'); if(wEl) wEl.value = w;
+          const vEl = document.getElementById('os_vis'); if(vEl) vEl.value = vis;
+          const tEl = document.getElementById('os_airtemp'); if(tEl) tEl.value = temp;
+          if(src) src.textContent = `Obs: station ${stId}`;
+        }
+      }catch(e){}
+    }
+
+    if(props && props.gridId!=null){
+      const grid1 = `https://api.weather.gov/gridpoints/${props.gridId}/${props.gridX},${props.gridY}`;
+      const grid2 = `https://r.jina.ai/http://api.weather.gov/gridpoints/${props.gridId}/${props.gridX},${props.gridY}`;
+      try{
+        const grid = await getJSONWithFallbacks([grid1, grid2]);
+        const gp = grid && grid.properties;
+        const wave = gp && gp.waveHeight && gp.waveHeight.values && gp.waveHeight.values[0] && gp.waveHeight.values[0].value;
+        const cloudBase = gp && gp.ceilingHeight && gp.ceilingHeight.values && gp.ceilingHeight.values[0] && gp.ceilingHeight.values[0].value;
+        const seasEl = document.getElementById('os_seas'); if(wave!=null && seasEl) seasEl.value = ftFromMetersWave(wave);
+        const ceilEl = document.getElementById('os_ceiling'); if(cloudBase!=null && ceilEl) ceilEl.value = ftFromMeters(cloudBase);
+        if(src && !src.textContent) src.textContent = `Grid: ${props.gridId} ${props.gridX},${props.gridY}`;
+      }catch(e){}
+    }
+
+    if(!document.getElementById('os_wind').value && !document.getElementById('os_seas').value){
+      setErr('#onscene_err','Could not fetch on-scene weather (CORS or coverage).');
+    } else {
+      flash('On-scene weather updated.');
+    }
+  }
+
+  document.getElementById('btnOnScene').addEventListener('click', ()=>{
+    const s = document.getElementById('brief_location').value;
+    const pt = parseLatLon(s);
+    if(!pt){ setErr('#onscene_err','Enter lat,lon (e.g., 37.619,-122.375).'); return; }
+    fetchOnScene(pt.lat, pt.lon);
+  });
+
+  document.getElementById('btnUseGPS').addEventListener('click', ()=>{
+    if(!navigator.geolocation){ setErr('#onscene_err','Geolocation not available.'); return; }
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const lat = pos.coords.latitude.toFixed(5);
+      const lon = pos.coords.longitude.toFixed(5);
+      const input = document.getElementById('brief_location');
+      input.value = `${lat},${lon}`;
+      fetchOnScene(lat, lon);
+    }, err=>{
+      setErr('#onscene_err','GPS denied. Allow Location for this page in Settings.');
+    }, {enableHighAccuracy:true, timeout:8000, maximumAge:0});
+  });
+</script>
+</body>
+</html>
