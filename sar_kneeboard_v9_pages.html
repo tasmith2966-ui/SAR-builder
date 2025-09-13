@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SAR Kneeboard — v9 (Pages-safe)</title>
+<link rel="preload" href="app.js" as="script">
+<style>
+  body { font-family: Courier, monospace; }
+  .jswarn{background:#fff3cd;color:#532;padding:8px;border:2px solid #e0c26b;}
+</style>
+</head>
+<body>
+<p id="jswarn" class="jswarn">If this banner stays visible, JavaScript is blocked or app.js not loaded.</p>
+<header>
+  <h1>SAR Kneeboard — Typewriter Edition</h1>
+  <div class="btns">
+    <button class="primary" id="btnSave">Save</button>
+    <button id="btnLoad">Load</button>
+    <button id="btnExport">Export</button>
+    <button id="btnPrint">Print/PDF</button>
+    <button id="btnReset">Reset</button>
+    <button id="btnNow">Now→Top Times</button>
+    <button id="btnNight">Night Mode</button>
+  </div>
+</header>
+<main>
+  <div class="card">
+    <h2>Fuel Calculator (Simple v9)</h2>
+    <div>
+      <label>Takeoff Fuel</label><input type="text" id="fc_start">
+      <label>Planned Landing Fuel</label><input type="text" id="fc_end">
+      <label>Hover/Climb Burn (per hr)</label><input type="text" id="fc_hov_burn">
+      <label>Distance to On‑Scene (NM)</label><input type="text" id="fc_dist">
+      <label>Cruise Speed (KTAS)</label><input type="text" id="fc_tas">
+      <label>Cruise Burn (per hr)</label><input type="text" id="fc_cru_burn">
+      <label>Distance to Landing (NM)</label><input type="text" id="fc_dist_back">
+    </div>
+    <div>
+      <button type="button" id="fc_btn_calc">Compute</button>
+      <button type="button" id="fc_btn_clear">Clear</button>
+      <button type="button" id="fc_btn_prefill">Prefill Example</button>
+    </div>
+    <div id="fc_out" style="margin-top:10px; font-size:14px; line-height:1.35"></div>
+  </div>
+</main>
+<script src="app.js" defer></script>
+</body>
+</html>
