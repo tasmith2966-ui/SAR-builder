@@ -1,6 +1,6 @@
-// SAR Kneeboard app.js — GitHub Pages–safe (no inline handlers), FULL feature set
+// app.js for v9.1 Mobile — Full feature set, fixed fuel rates, mobile layout
 (function(){
-  var FORM_ID='sar_kneeboard_v9_pages_full';
+  var FORM_ID='sar_kneeboard_v91_mobile_full';
   var $ = function(id){ return document.getElementById(id); };
 
   // Hide banner once JS executes
@@ -14,14 +14,14 @@
       var el=document.createElement('div'); el.textContent=msg;
       el.style.position='fixed'; el.style.bottom='16px'; el.style.left='50%'; el.style.transform='translateX(-50%)';
       el.style.background='rgba(0,0,0,.8)'; el.style.color='#c6ffb5'; el.style.padding='8px 12px';
-      el.style.border='2px solid #244b24'; el.style.borderRadius='4px'; el.style.fontWeight='700'; el.style.zIndex='9999';
+      el.style.border='2px solid #244b24'; el.style.borderRadius='6px'; el.style.fontWeight='700'; el.style.zIndex='9999';
       document.body.appendChild(el); setTimeout(function(){ el.remove(); }, 1400);
     }catch(e){}
   }
-
   function autoGrow(el){ el.style.height='auto'; el.style.height=(el.scrollHeight+2)+'px'; }
   (function(){ var areas=document.querySelectorAll('textarea'); for(var i=0;i<areas.length;i++){ (function(t){ autoGrow(t); t.addEventListener('input', function(){autoGrow(t);}); })(areas[i]); } })();
 
+  // Times
   function hhmmLocalNow(){ var d=new Date(); return String(d.getHours()).padStart(2,'0') + String(d.getMinutes()).padStart(2,'0'); }
   function hhmmZulu(hhmm){
     if(!hhmm) return '';
@@ -48,6 +48,7 @@
   attachSync('brief_current_time','brief_current_time_z');
   attachSync('brief_call_time','brief_call_time_z');
 
+  // Save/Load
   function serialize(){
     var ids=[
       'brief_current_time','brief_current_time_z','brief_call_time','brief_call_time_z',
@@ -63,7 +64,7 @@
       'evt_ohd_time_local','evt_ohd_time_z','evt_ohd_fuel','evt_ohd_pos',
       'evt_ds_time_local','evt_ds_time_z','evt_ds_fuel','evt_ds_pos',
       'evt_sd_time_local','evt_sd_time_z','evt_sd_fuel','evt_sd_pos',
-      'comments','fc_start','fc_end','fc_hov_burn','fc_dist','fc_tas','fc_cru_burn','fc_dist_back'
+      'comments','fc_start','fc_end','fc_dist','fc_tas','fc_dist_back'
     ];
     var o={}; for(var i=0;i<ids.length;i++){ var el=$(ids[i]); if(el) o[ids[i]]=el.value; }
     var checks=['chk_weather','chk_notams','chk_fuelstop','chk_adiz','chk_sign','chk_ifr','chk_ops','chk_sap','chk_flightsurgeon','chk_extragear'];
@@ -80,7 +81,7 @@
   try{ hydrate(JSON.parse(localStorage.getItem(FORM_ID)||'{}')); }catch(e){}
   setInterval(function(){ try{ localStorage.setItem(FORM_ID, JSON.stringify(serialize())); }catch(e){} }, 5000);
 
-  // Buttons
+  // Top controls
   $('btnSave').addEventListener('click', function(){ try{ localStorage.setItem(FORM_ID, JSON.stringify(serialize())); flash('Saved locally.'); }catch(e){} });
   $('btnLoad').addEventListener('click', function(){ try{ hydrate(JSON.parse(localStorage.getItem(FORM_ID)||'{}')); flash('Loaded from device.'); }catch(e){} });
   $('btnReset').addEventListener('click', function(){ if(confirm('Clear all fields?')){ try{ localStorage.removeItem(FORM_ID); }catch(e){} var inputs=document.querySelectorAll('input,textarea'); for(var i=0;i<inputs.length;i++){ if(inputs[i].type==='checkbox') inputs[i].checked=false; else inputs[i].value=''; } flash('Cleared.'); } });
@@ -97,18 +98,9 @@
       'Object: '+val('brief_search_object')+'\\n'+
       'Tasking: '+val('brief_tasking')+'\\n'+
       'Reporting: '+val('brief_reporting_source')+' | Others: '+val('brief_other_assets')+'\\n'+
-      'Weather: '+val('brief_weather')+'\\n'+
-      'Fuel: '+val('brief_fuel_plan')+'\\n\\n'+
-      '## Fuel Calc (v9)\\n'+
-      'Start '+val('fc_start')+', Landing '+val('fc_end')+', HovBurn '+val('fc_hov_burn')+'/hr, Out '+val('fc_dist')+'NM @ '+val('fc_tas')+'kt, CruiseBurn '+val('fc_cru_burn')+'/hr, Back '+val('fc_dist_back')+'NM\\n';
+      'Weather: '+val('brief_weather')+'\\n';
     var blob=new Blob([md],{type:'text/plain'});
-    var file=new File([blob],'sar_kneeboard.txt',{type:'text/plain'});
-    if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
-      navigator.share({title:'SAR Kneeboard', text:'Export', files:[file]}).catch(function(){});
-    }else{
-      var url=URL.createObjectURL(blob), a=document.createElement('a'); a.href=url; a.download='sar_kneeboard.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-      alert('Exported as text file.');
-    }
+    var url=URL.createObjectURL(blob), a=document.createElement('a'); a.href=url; a.download='sar_kneeboard.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   });
 
   // Weather helpers
@@ -143,6 +135,7 @@
     });
   });
 
+  // Parse "3655.39N/12208.28W"
   function parseLatLonDM(s){
     if(!s) return null;
     s=s.trim().toUpperCase();
@@ -263,23 +256,24 @@
         return (isLat?String(d).padStart(2,'0'):String(d).padStart(3,'0')) + m.toFixed(2).padStart(5,'0') + hem;
       }
       $('brief_location').value = toDMM(lat,true)+'/'+toDMM(lon,false);
-      // optionally call on-scene
     }, function(){ setErr('onscene_err','GPS denied.'); }, {enableHighAccuracy:true, timeout:8000, maximumAge:0});
   });
 
-  // Fuel calculator
+  // Fuel calculator (fixed rates)
+  var FC_CRUISE = 600; // per hour
+  var FC_HOVER  = 700; // per hour
   function fc_num(id){ var v = ($(id).value||'').trim().replace(/,/g,''); return v? Number(v) : NaN; }
   function fc_fmtH(hours){ if(!isFinite(hours)) return '--:--'; var m=Math.max(0, Math.round(hours*60)); var h=Math.floor(m/60), mm=m%60; return String(h).padStart(2,'0')+':'+String(mm).padStart(2,'0'); }
   function fc_calc(){
-    var start=fc_num('fc_start'), end=fc_num('fc_end'), hov=fc_num('fc_hov_burn');
-    var dist=fc_num('fc_dist'), tas=fc_num('fc_tas'), cburn=fc_num('fc_cru_burn'), back=fc_num('fc_dist_back');
+    var start=fc_num('fc_start'), end=fc_num('fc_end');
+    var dist=fc_num('fc_dist'), tas=fc_num('fc_tas'), back=fc_num('fc_dist_back');
     var out=$('fc_out');
-    if([start,end,hov,dist,tas,cburn,back].some(function(x){return !isFinite(x) || x<0;}) || tas===0){
+    if([start,end,dist,tas,back].some(function(x){return !isFinite(x) || x<0;}) || tas===0){
       out.innerHTML='<div class="err">Check inputs. All non‑negative; speed > 0.</div>'; return;
     }
-    var t_out = dist/tas; var f_out = cburn*t_out; var fuel_on_scene = start - f_out;
-    var t_back = back/tas; var f_back = cburn*t_back; var bingo = end + f_back;
-    var f_avail = fuel_on_scene - bingo; var t_hover = f_avail/ hov;
+    var t_out = dist/tas; var f_out = FC_CRUISE*t_out; var fuel_on_scene = start - f_out;
+    var t_back = back/tas; var f_back = FC_CRUISE*t_back; var bingo = end + f_back;
+    var f_avail = fuel_on_scene - bingo; var t_hover = f_avail/ FC_HOVER;
     var good = t_hover >= 0;
     var badge = good ? '<span class="badge">GOOD</span>' : '<span class="badge bad">SHORT</span>';
     var short_text = good ? '' : ('Short by <b>'+Math.abs(f_avail).toFixed(0)+'</b> units at on‑scene.');
@@ -289,12 +283,10 @@
       + '<div class="mini">(Takeoff '+start.toFixed(0)+' − Outbound '+f_out.toFixed(0)+')</div>'
       + '<div style="border-top:1px dashed #c9bb98; margin-top:8px; padding-top:8px"><b>Return (Bingo):</b> Time '+fc_fmtH(t_back)+' • Transit Fuel '+f_back.toFixed(0)+' • <b>Bingo</b> '+bingo.toFixed(0)+'</div>'
       + '<div style="border-top:1px dashed #c9bb98; margin-top:8px; padding-top:8px"><b>On‑Scene Fuel Available:</b> '+Math.max(0,f_avail).toFixed(0)+' '+badge+'</div>'
-      + '<div><b>On‑Scene Time (hover):</b> '+fc_fmtH(t_hover)+' at '+hov.toFixed(0)+'/hr</div>'
+      + '<div><b>On‑Scene Time (hover):</b> '+fc_fmtH(t_hover)+' at '+FC_HOVER.toFixed(0)+'/hr</div>'
       + '<div>'+short_text+'</div>';
   }
-  function fc_clear(){ ['fc_start','fc_end','fc_hov_burn','fc_dist','fc_tas','fc_cru_burn','fc_dist_back'].forEach(function(id){ $(id).value=''; }); $('fc_out').innerHTML=''; }
-  function fc_prefill(){ $('fc_start').value='1500'; $('fc_end').value='400'; $('fc_dist').value='40'; $('fc_tas').value='120'; $('fc_cru_burn').value='600'; $('fc_dist_back').value='40'; $('fc_hov_burn').value='700'; fc_calc(); }
+  function fc_clear(){ ['fc_start','fc_end','fc_dist','fc_tas','fc_dist_back'].forEach(function(id){ $(id).value=''; }); $('fc_out').innerHTML=''; }
   $('fc_btn_calc').addEventListener('click', fc_calc);
   $('fc_btn_clear').addEventListener('click', fc_clear);
-  $('fc_btn_prefill').addEventListener('click', fc_prefill);
 })();

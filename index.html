@@ -3,12 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SAR Kneeboard — v9 (Pages-safe, full)</title>
+<title>SAR Kneeboard — v9.1 (Mobile, Full)</title>
 <link rel="preload" href="app.js" as="script">
 <style>
   :root{
     --desk:#b9b19c; --paper:#f5f2e6; --paper2:#f0ecde; --ink:#1a1d2b; --rule:#bcae8f; --tab:#20345a;
     --btn-bg1:#2a426e; --btn-bg2:#163056; --btn-br:#0f1b35; --btnp-bg1:#bf2f2f; --btnp-bg2:#8f1f1f; --btnp-br:#5f1515;
+    --pad: max(12px, env(safe-area-inset-left)); --padr:max(12px, env(safe-area-inset-right));
   }
   body.night{
     --desk:#081108; --paper:#0d150d; --paper2:#0a120a; --ink:#bafba9; --rule:#1a2b1a; --tab:#0f2a12;
@@ -19,7 +20,7 @@
   body{
     margin:0;
     background:linear-gradient(0deg,#c7c0aa 0%, var(--desk) 60%);
-    font:16px "Courier New", Courier, ui-monospace, monospace;
+    font:18px "Courier New", Courier, ui-monospace, monospace;
     color:var(--ink);
   }
   body.night{
@@ -28,25 +29,26 @@
   }
   header{
     position:sticky; top:0; z-index:30;
-    background:linear-gradient(180deg, rgba(245,242,230,.98), rgba(245,242,230,.85) 70%, rgba(245,242,230,0));
-    padding:8px 12px 6px;
+    background:linear-gradient(180deg, rgba(245,242,230,.98), rgba(245,242,230,.9) 70%, rgba(245,242,230,0));
+    padding:8px var(--padr) 6px var(--pad);
     border-bottom:2px solid var(--rule);
   }
-  body.night header{ background:linear-gradient(180deg, rgba(13,21,13,.98), rgba(13,21,13,.85) 70%, rgba(13,21,13,0)); }
+  body.night header{ background:linear-gradient(180deg, rgba(13,21,13,.98), rgba(13,21,13,.9) 70%, rgba(13,21,13,0)); }
   header h1{ margin:0; font-weight:700; letter-spacing:.6px; font-size:18px; }
-  .btns{margin-top:6px; display:flex; flex-wrap:wrap; gap:6px}
+  .btns{margin-top:6px; display:flex; flex-wrap:wrap; gap:8px}
   button{
     border:2px solid var(--btn-br);
     background:linear-gradient(var(--btn-bg1),var(--btn-bg2));
-    color:#fff; padding:8px 10px; border-radius:4px; font-weight:700; letter-spacing:.4px; cursor:pointer;
+    color:#fff; padding:10px 12px; border-radius:6px; font-weight:700; letter-spacing:.4px; cursor:pointer;
+    min-height:44px;
   }
   button.primary{ background:linear-gradient(var(--btnp-bg1),var(--btnp-bg2)); border-color:var(--btnp-br); }
-  main{max-width:980px; margin:0 auto; padding:14px 12px 96px}
+  main{max-width:980px; margin:0 auto; padding:14px var(--padr) 96px var(--pad)}
   .card{
     position:relative;
     background:repeating-linear-gradient(0deg, var(--paper), var(--paper) 28px, var(--paper2) 29px);
     border:2px solid var(--rule);
-    border-radius:6px;
+    border-radius:8px;
     padding:12px;
     margin:14px 0;
   }
@@ -57,32 +59,34 @@
   }
   .card::before{ left:18px } .card::after{ right:18px }
   h2{ margin:0 0 8px; font-size:14px; text-transform:uppercase; letter-spacing:1px; padding:2px 6px; display:inline-block; border-left:4px solid var(--tab); }
-  label{ display:block; margin:8px 0 4px; font-size:12px; letter-spacing:.6px; text-transform:uppercase; }
-  .grid{display:grid; gap:8px}
+  label{ display:block; margin:10px 0 6px; font-size:12px; letter-spacing:.6px; text-transform:uppercase; }
+  .grid{display:grid; gap:10px}
   .g2{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:repeat(3,1fr)}
-  @media (max-width:720px){ .g2,.g3{grid-template-columns:1fr} }
-  .row{display:flex; gap:8px; flex-wrap:wrap} .row > *{flex:1 1 0}
+  @media (max-width:760px){ .g2,.g3{grid-template-columns:1fr} }
+  .row{display:flex; gap:10px; flex-wrap:wrap} .row > *{flex:1 1 0}
   input[type="text"], textarea, select{
     width:100%; max-width:100%; background:#fffdf7; color:var(--ink);
-    border:2px solid #b7a98a; border-radius:4px; padding:8px 10px;
-    font:16px "Courier New", Courier, ui-monospace, monospace; display:block;
+    border:2px solid #b7a98a; border-radius:6px; padding:10px 12px;
+    font:18px "Courier New", Courier, ui-monospace, monospace; display:block;
   }
-  body.night input[type="text"], body.night textarea{ background:#0c140c; color:var(--ink); border-color:#223622; }
-  textarea{ min-height:72px; resize:vertical }
-  .tbl{width:100%; border-collapse:collapse; font-size:14px; table-layout:fixed}
-  .tbl th,.tbl td{border:2px solid var(--rule); padding:6px 6px; text-align:left; vertical-align:middle}
+  input[type="text"]{ line-height:1.2 }
+  body.night input[type="text"], body.night textarea{ background:#0c140c; color:#bafba9; border-color:#223622; }
+  textarea{ min-height:92px; resize:vertical }
+  .tbl{width:100%; border-collapse:collapse; font-size:16px; table-layout:fixed}
+  .tbl th,.tbl td{border:2px solid var(--rule); padding:8px; text-align:left; vertical-align:middle}
   .tbl th{ background:#eee7d1; letter-spacing:.8px; text-transform:uppercase; font-size:12px }
   body.night .tbl th{ background:#0f170f }
-  .tbl td input[type="text"]{ width:100%; padding:6px 8px; font-size:14px }
-  .checklist label{border-bottom:1px dashed #c9bb98; padding:6px 0; margin:0}
-  body.night .checklist label{ border-color:#274027 }
-  .mini{font-size:11px; color:#3b3b3b} body.night .mini{ color:#79b171 }
-  .inline{display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap} .inline > div{flex:1 1 0}
-  .err{color:#9b0f0f; font-size:12px; margin-top:4px} body.night .err{ color:#e58f8f }
+  .tbl td input[type="text"]{ width:100%; padding:8px 10px; font-size:16px }
+  .checklist label{border-bottom:1px dashed #c9bb98; padding:10px 0; margin:0} body.night .checklist label{ border-color:#274027 }
+  .mini{font-size:12px; color:#3b3b3b} body.night .mini{ color:#79b171 }
+  .inline{display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap} .inline > div{flex:1 1 0}
+  .err{color:#9b0f0f; font-size:12px; margin-top:6px} body.night .err{ color:#e58f8f }
   .badge{ display:inline-block; padding:2px 6px; border:2px solid #244b24; background:#0a2b12; color:#bafba9; font-weight:700; margin-left:6px }
   .bad{ border-color:#5f1b1b; background:#3a1212; color:#ffd1d1 }
   .jswarn{position:sticky; top:0; background:#fff3cd; color:#532; border:2px solid #e0c26b; padding:8px 10px; margin:0; font-weight:700}
   body.night .jswarn{ background:#132013; color:#bafba9; border-color:#244b24 }
+  .stack{ display:flex; flex-direction:column; gap:8px }
+  .btn-row{ display:flex; gap:8px; flex-wrap:wrap }
   @media print{ header,.btns,#btnPrint,#btnNight,.jswarn{display:none!important} body{background:#fff; text-shadow:none} .card{box-shadow:none} }
 </style>
 </head>
@@ -123,11 +127,13 @@
     </div>
 
     <label>Location (Lat/Long “3655.39N/12208.28W”)</label>
-    <div class="row">
+    <div class="stack">
       <input type="text" id="brief_location" placeholder="3655.39N/12208.28W" autocapitalize="off" autocorrect="off" spellcheck="false">
-      <button type="button" id="btnGPS">Use GPS</button>
-      <button type="button" id="btnOnScene">On‑Scene Wx</button>
-      <button type="button" id="btnPointAvi">Point Wx (Aviation)</button>
+      <div class="btn-row">
+        <button type="button" id="btnGPS">Use GPS</button>
+        <button type="button" id="btnOnScene">On‑Scene Wx</button>
+        <button type="button" id="btnPointAvi">Point Wx (Aviation)</button>
+      </div>
     </div>
     <div id="onscene_err" class="err"></div>
 
@@ -154,7 +160,7 @@
         <textarea id="brief_weather" placeholder="METAR or Point Wx summaries appear here"></textarea>
         <div id="metar_err" class="err"></div>
       </div>
-      <div style="flex:0 0 260px">
+      <div style="flex:0 0 280px">
         <label>METAR Station</label>
         <div class="row">
           <input type="text" id="metar_station" value="KSFO" placeholder="KSFO">
@@ -222,25 +228,22 @@
     </div>
   </div>
 
-  <!-- Fuel Calculator (full) -->
+  <!-- Fuel Calculator (v9.1: fixed rates, no prefill) -->
   <div class="card" id="fuelCalc">
-    <h2>Fuel Calculator (Simple v9)</h2>
+    <h2>Fuel Calculator (v9.1)</h2>
     <div class="grid g3">
       <div><label>Takeoff Fuel</label><input type="text" id="fc_start" inputmode="decimal" placeholder="e.g., 1500"></div>
       <div><label>Planned Landing Fuel</label><input type="text" id="fc_end" inputmode="decimal" placeholder="e.g., 400"></div>
-      <div><label>Hover/Climb Burn (per hr)</label><input type="text" id="fc_hov_burn" inputmode="decimal" placeholder="e.g., 700"></div>
       <div><label>Distance to On‑Scene (NM)</label><input type="text" id="fc_dist" inputmode="decimal" placeholder="e.g., 40"></div>
       <div><label>Cruise Speed (KTAS)</label><input type="text" id="fc_tas" inputmode="decimal" placeholder="e.g., 120"></div>
-      <div><label>Cruise Burn (per hr)</label><input type="text" id="fc_cru_burn" inputmode="decimal" placeholder="e.g., 600"></div>
       <div><label>Distance to Landing (NM)</label><input type="text" id="fc_dist_back" inputmode="decimal" placeholder="e.g., 40"></div>
     </div>
     <div class="btns" style="margin-top:10px">
       <button type="button" id="fc_btn_calc">Compute</button>
       <button type="button" id="fc_btn_clear">Clear</button>
-      <button type="button" id="fc_btn_prefill">Prefill 1500/400/40/120/600/40/700</button>
     </div>
-    <div class="mini">Units must match (lbs or gal). Times rounded to nearest minute.</div>
-    <div id="fc_out" style="margin-top:10px; font-size:14px; line-height:1.35"></div>
+    <div class="mini">Assumptions: Cruise 600/hr, Hover/Climb 700/hr. Units must match (lbs or gal). Times rounded to nearest minute.</div>
+    <div id="fc_out" style="margin-top:10px; font-size:16px; line-height:1.35"></div>
   </div>
 
   <div class="card">
