@@ -52,6 +52,24 @@
     padding:12px;
     margin:14px 0;
   }
+  .card summary{
+    cursor:pointer;
+  }
+  .card summary:focus-visible{
+    outline:3px solid var(--tab);
+    outline-offset:4px;
+  }
+  .card summary h2{
+    margin:0;
+    font-size:14px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    border-left:4px solid var(--tab);
+    padding:2px 6px;
+  }
+  .card summary::-webkit-details-marker{ color:var(--tab); }
+  .card summary::marker{ color:var(--tab); }
+  .card .card-body{ margin-top:12px; }
   .card::before,.card::after{
     content:""; position:absolute; top:-7px; width:10px; height:10px; border-radius:50%;
     background:radial-gradient(circle at 35% 35%, #000 0%, #000 40%, #333 41%, #000 75%, transparent 76%);
@@ -106,14 +124,15 @@
 </header>
 
 <main>
-  <div class="card">
-    <h2>Operation’s Officer Brief</h2>
-    <div class="grid g2">
-      <div>
-        <label>Current time (HHMM local / Z)</label>
-        <div class="row">
-          <input type="text" inputmode="numeric" maxlength="4" id="brief_current_time" placeholder="1530">
-          <input type="text" inputmode="numeric" maxlength="4" id="brief_current_time_z" placeholder="2330">
+  <details class="card" open>
+    <summary><h2>Operation’s Officer Brief</h2></summary>
+    <div class="card-body">
+      <div class="grid g2">
+        <div>
+          <label>Current time (HHMM local / Z)</label>
+          <div class="row">
+            <input type="text" inputmode="numeric" maxlength="4" id="brief_current_time" placeholder="1530">
+            <input type="text" inputmode="numeric" maxlength="4" id="brief_current_time_z" placeholder="2330">
         </div>
         <div class="mini">24‑hour format, no colon</div>
       </div>
@@ -126,175 +145,190 @@
       </div>
     </div>
 
-    <label>Location (Lat/Long “3655.39N/12208.28W”)</label>
-    <div class="stack">
-      <input type="text" id="brief_location" placeholder="3655.39N/12208.28W" autocapitalize="off" autocorrect="off" spellcheck="false">
-      <div class="btn-row">
-        <button type="button" id="btnGPS">Use GPS</button>
-        <button type="button" id="btnOnScene">On‑Scene Wx</button>
-        <button type="button" id="btnPointAvi">Point Wx (Aviation)</button>
-      </div>
-    </div>
-    <div id="onscene_err" class="err"></div>
-
-    <label>Search Object</label>
-    <input type="text" id="brief_search_object" placeholder="21‑ft whaler white hull, 2 POB">
-
-    <label>Tasking</label>
-    <textarea id="brief_tasking"></textarea>
-
-    <div class="grid g2">
-      <div>
-        <label>Reporting Source</label>
-        <input type="text" id="brief_reporting_source">
-      </div>
-      <div>
-        <label>Other Assets Responding</label>
-        <input type="text" id="brief_other_assets">
-      </div>
-    </div>
-
-    <div class="inline">
-      <div>
-        <label>Weather</label>
-        <textarea id="brief_weather" placeholder="METAR or Point Wx summaries appear here"></textarea>
-        <div id="metar_err" class="err"></div>
-      </div>
-      <div style="flex:0 0 280px">
-        <label>METAR Station</label>
-        <div class="row">
-          <input type="text" id="metar_station" value="KSFO" placeholder="KSFO">
-          <button type="button" id="btnMetar">Fetch METAR</button>
+      <label>Location (Lat/Long “3655.39N/12208.28W”)</label>
+      <div class="stack">
+        <input type="text" id="brief_location" placeholder="3655.39N/12208.28W" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <div class="btn-row">
+          <button type="button" id="btnGPS">Use GPS</button>
+          <button type="button" id="btnOnScene">On‑Scene Wx</button>
+          <button type="button" id="btnPointAvi">Point Wx (Aviation)</button>
         </div>
-        <div class="mini">Use Firefox if Safari blocks requests.</div>
+      </div>
+      <div id="onscene_err" class="err"></div>
+
+      <label>Search Object</label>
+      <input type="text" id="brief_search_object" placeholder="21‑ft whaler white hull, 2 POB">
+
+      <label>Tasking</label>
+      <textarea id="brief_tasking"></textarea>
+
+      <div class="grid g2">
+        <div>
+          <label>Reporting Source</label>
+          <input type="text" id="brief_reporting_source">
+        </div>
+        <div>
+          <label>Other Assets Responding</label>
+          <input type="text" id="brief_other_assets">
+        </div>
+      </div>
+
+      <div class="inline">
+        <div>
+          <label>Weather</label>
+          <textarea id="brief_weather" placeholder="METAR or Point Wx summaries appear here"></textarea>
+          <div id="metar_err" class="err"></div>
+        </div>
+        <div style="flex:0 0 280px">
+          <label>METAR Station</label>
+          <div class="row">
+            <input type="text" id="metar_station" value="KSFO" placeholder="KSFO">
+            <button type="button" id="btnMetar">Fetch METAR</button>
+          </div>
+          <div class="mini">Use Firefox if Safari blocks requests.</div>
+        </div>
+      </div>
+
+      <label>Fuel Plan</label>
+      <textarea id="brief_fuel_plan"></textarea>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary><h2>Search Object Details</h2></summary>
+    <div class="card-body">
+      <div class="grid g3">
+        <div><label>Name</label><input type="text" id="so_name"></div>
+        <div><label>Length</label><input type="text" id="so_length"></div>
+        <div><label>Type</label><input type="text" id="so_type"></div>
+        <div><label>Color</label><input type="text" id="so_color"></div>
+        <div><label>POB</label><input type="text" id="so_pob"></div>
+        <div><label>Position</label><input type="text" id="so_position"></div>
       </div>
     </div>
+  </details>
 
-    <label>Fuel Plan</label>
-    <textarea id="brief_fuel_plan"></textarea>
-  </div>
-
-  <div class="card">
-    <h2>Search Object Details</h2>
-    <div class="grid g3">
-      <div><label>Name</label><input type="text" id="so_name"></div>
-      <div><label>Length</label><input type="text" id="so_length"></div>
-      <div><label>Type</label><input type="text" id="so_type"></div>
-      <div><label>Color</label><input type="text" id="so_color"></div>
-      <div><label>POB</label><input type="text" id="so_pob"></div>
-      <div><label>Position</label><input type="text" id="so_position"></div>
+  <details class="card" open>
+    <summary><h2>On‑Scene Weather</h2></summary>
+    <div class="card-body">
+      <div class="grid g3">
+        <div><label>Wind</label><input type="text" id="os_wind"></div>
+        <div><label>Ceiling</label><input type="text" id="os_ceiling"></div>
+        <div><label>Visibility</label><input type="text" id="os_vis"></div>
+        <div><label>Air Temp</label><input type="text" id="os_airtemp"></div>
+        <div><label>Seas</label><input type="text" id="os_seas"></div>
+        <div><label>Swells</label><input type="text" id="os_swells"></div>
+      </div>
+      <div class="mini" id="onscene_src"></div>
     </div>
-  </div>
+  </details>
 
-  <div class="card">
-    <h2>On‑Scene Weather</h2>
-    <div class="grid g3">
-      <div><label>Wind</label><input type="text" id="os_wind"></div>
-      <div><label>Ceiling</label><input type="text" id="os_ceiling"></div>
-      <div><label>Visibility</label><input type="text" id="os_vis"></div>
-      <div><label>Air Temp</label><input type="text" id="os_airtemp"></div>
-      <div><label>Seas</label><input type="text" id="os_seas"></div>
-      <div><label>Swells</label><input type="text" id="os_swells"></div>
+  <details class="card" open>
+    <summary><h2>Pre‑Ramp Checklist</h2></summary>
+    <div class="card-body">
+      <div class="checklist">
+        <label><input type="checkbox" id="chk_weather"> Check Weather</label>
+        <label><input type="checkbox" id="chk_notams"> Check NOTAMs</label>
+        <label><input type="checkbox" id="chk_fuelstop"> Fuel / Defuel? Next Fuel Stop</label>
+        <label><input type="checkbox" id="chk_adiz"> Coordinate ADIZ / Warning Areas</label>
+        <label><input type="checkbox" id="chk_sign"> Sign for Aircraft</label>
+        <label><input type="checkbox" id="chk_ifr"> File IFR Flight Plan</label>
+        <label><input type="checkbox" id="chk_ops"> Call Ops</label>
+        <label><input type="checkbox" id="chk_sap"> Search Action Plan from Sector</label>
+        <label><input type="checkbox" id="chk_flightsurgeon"> Call Flight Surgeon</label>
+        <label><input type="checkbox" id="chk_extragear"> Extra gear (litter, SLDMB, Nightsun)</label>
+      </div>
     </div>
-    <div class="mini" id="onscene_src"></div>
-  </div>
+  </details>
 
-  <div class="card">
-    <h2>Pre‑Ramp Checklist</h2>
-    <div class="checklist">
-      <label><input type="checkbox" id="chk_weather"> Check Weather</label>
-      <label><input type="checkbox" id="chk_notams"> Check NOTAMs</label>
-      <label><input type="checkbox" id="chk_fuelstop"> Fuel / Defuel? Next Fuel Stop</label>
-      <label><input type="checkbox" id="chk_adiz"> Coordinate ADIZ / Warning Areas</label>
-      <label><input type="checkbox" id="chk_sign"> Sign for Aircraft</label>
-      <label><input type="checkbox" id="chk_ifr"> File IFR Flight Plan</label>
-      <label><input type="checkbox" id="chk_ops"> Call Ops</label>
-      <label><input type="checkbox" id="chk_sap"> Search Action Plan from Sector</label>
-      <label><input type="checkbox" id="chk_flightsurgeon"> Call Flight Surgeon</label>
-      <label><input type="checkbox" id="chk_extragear"> Extra gear (litter, SLDMB, Nightsun)</label>
+  <details class="card" open>
+    <summary><h2>Search Data</h2></summary>
+    <div class="card-body">
+      <div class="grid g3">
+        <div><label>CPT</label><input type="text" id="sd_cpt"></div>
+        <div><label>Leg</label><input type="text" id="sd_leg"></div>
+        <div><label>Width</label><input type="text" id="sd_width"></div>
+        <div><label>T/S</label><input type="text" id="sd_ts"></div>
+        <div><label>Creep</label><input type="text" id="sd_creep"></div>
+        <div><label>CSP</label><input type="text" id="sd_csp"></div>
+        <div><label>1st Turn</label><input type="text" id="sd_first"></div>
+      </div>
     </div>
-  </div>
-
-  <div class="card">
-    <h2>Search Data</h2>
-    <div class="grid g3">
-      <div><label>CPT</label><input type="text" id="sd_cpt"></div>
-      <div><label>Leg</label><input type="text" id="sd_leg"></div>
-      <div><label>Width</label><input type="text" id="sd_width"></div>
-      <div><label>T/S</label><input type="text" id="sd_ts"></div>
-      <div><label>Creep</label><input type="text" id="sd_creep"></div>
-      <div><label>CSP</label><input type="text" id="sd_csp"></div>
-      <div><label>1st Turn</label><input type="text" id="sd_first"></div>
-    </div>
-  </div>
+  </details>
 
   <!-- Fuel Calculator (v9.1: fixed rates, no prefill) -->
-  <div class="card" id="fuelCalc">
-    <h2>Fuel Calculator (v9.1)</h2>
-    <div class="grid g3">
-      <div><label>Takeoff Fuel</label><input type="text" id="fc_start" inputmode="decimal" placeholder="e.g., 1500"></div>
-      <div><label>Planned Landing Fuel</label><input type="text" id="fc_end" inputmode="decimal" placeholder="e.g., 400"></div>
-      <div><label>Distance to On‑Scene (NM)</label><input type="text" id="fc_dist" inputmode="decimal" placeholder="e.g., 40"></div>
-      <div><label>Cruise Speed (KTAS)</label><input type="text" id="fc_tas" inputmode="decimal" placeholder="e.g., 120"></div>
-      <div><label>Distance to Landing (NM)</label><input type="text" id="fc_dist_back" inputmode="decimal" placeholder="e.g., 40"></div>
+  <details class="card" id="fuelCalc" open>
+    <summary><h2>Fuel Calculator (v9.1)</h2></summary>
+    <div class="card-body">
+      <div class="grid g3">
+        <div><label>Takeoff Fuel</label><input type="text" id="fc_start" inputmode="decimal" placeholder="e.g., 1500"></div>
+        <div><label>Planned Landing Fuel</label><input type="text" id="fc_end" inputmode="decimal" placeholder="e.g., 400"></div>
+        <div><label>Distance to On‑Scene (NM)</label><input type="text" id="fc_dist" inputmode="decimal" placeholder="e.g., 40"></div>
+        <div><label>Cruise Speed (KTAS)</label><input type="text" id="fc_tas" inputmode="decimal" placeholder="e.g., 120"></div>
+        <div><label>Distance to Landing (NM)</label><input type="text" id="fc_dist_back" inputmode="decimal" placeholder="e.g., 40"></div>
+      </div>
+      <div class="btns" style="margin-top:10px">
+        <button type="button" id="fc_btn_calc">Compute</button>
+        <button type="button" id="fc_btn_clear">Clear</button>
+      </div>
+      <div class="mini">Assumptions: Cruise 600/hr, Hover/Climb 700/hr. Units must match (lbs or gal). Times rounded to nearest minute.</div>
+      <div id="fc_out" style="margin-top:10px; font-size:16px; line-height:1.35"></div>
     </div>
-    <div class="btns" style="margin-top:10px">
-      <button type="button" id="fc_btn_calc">Compute</button>
-      <button type="button" id="fc_btn_clear">Clear</button>
+  </details>
+
+  <details class="card" open>
+    <summary><h2>Mission Log</h2></summary>
+    <div class="card-body">
+      <table class="tbl">
+        <thead><tr><th style="width:22%">Event</th><th>Time (Local)</th><th>Time (Z)</th><th>Fuel</th><th>Position</th></tr></thead>
+        <tbody>
+          <tr><td>REQ</td>
+            <td><input type="text" inputmode="numeric" maxlength="4" id="evt_req_time_local" placeholder="1532"></td>
+            <td><input type="text" inputmode="numeric" maxlength="4" id="evt_req_time_z" placeholder="2332"></td>
+            <td><input type="text" id="evt_req_fuel" placeholder="lbs/gal"></td>
+            <td><input type="text" id="evt_req_pos" placeholder="lat/long or fix"></td></tr>
+          <tr><td>T/O</td>
+            <td><input type="text" inputmode="numeric" maxlength="4" id="evt_to_time_local"></td>
+            <td><input type="text" inputmode="numeric" maxlength="4" id="evt_to_time_z"></td>
+            <td><input type="text" id="evt_to_fuel"></td>
+            <td><input type="text" id="evt_to_pos"></td></tr>
+          <tr><td>CSP O/S</td>
+            <td><input type="text" inputmode="numeric" maxlength="4" id="evt_csp_time_local"></td>
+            <td><input type="text" inputmode="numeric" maxlength="4" id="evt_csp_time_z"></td>
+            <td><input type="text" id="evt_csp_fuel"></td>
+            <td><input type="text" id="evt_csp_pos"></td></tr>
+          <tr><td>TGT LOC</td>
+            <td><input type="text" inputmode="numeric" maxlength="4" id="evt_tgt_time_local"></td>
+            <td><input type="text" inputmode="numeric" maxlength="4" id="evt_tgt_time_z"></td>
+            <td><input type="text" id="evt_tgt_fuel"></td>
+            <td><input type="text" id="evt_tgt_pos"></td></tr>
+          <tr><td>OHD</td>
+            <td><input type="text" inputmode="numeric" maxlength="4" id="evt_ohd_time_local"></td>
+            <td><input type="text" inputmode="numeric" maxlength="4" id="evt_ohd_time_z"></td>
+            <td><input type="text" id="evt_ohd_fuel"></td>
+            <td><input type="text" id="evt_ohd_pos"></td></tr>
+          <tr><td>D/S</td>
+            <td><input type="text" inputmode="numeric" maxlength="4" id="evt_ds_time_local"></td>
+            <td><input type="text" inputmode="numeric" maxlength="4" id="evt_ds_time_z"></td>
+            <td><input type="text" id="evt_ds_fuel"></td>
+            <td><input type="text" id="evt_ds_pos"></td></tr>
+          <tr><td>S/D</td>
+            <td><input type="text" inputmode="numeric" maxlength="4" id="evt_sd_time_local"></td>
+            <td><input type="text" inputmode="numeric" maxlength="4" id="evt_sd_time_z"></td>
+            <td><input type="text" id="evt_sd_fuel"></td>
+            <td><input type="text" id="evt_sd_pos"></td></tr>
+        </tbody>
+      </table>
     </div>
-    <div class="mini">Assumptions: Cruise 600/hr, Hover/Climb 700/hr. Units must match (lbs or gal). Times rounded to nearest minute.</div>
-    <div id="fc_out" style="margin-top:10px; font-size:16px; line-height:1.35"></div>
-  </div>
+  </details>
 
-  <div class="card">
-    <h2>Mission Log</h2>
-    <table class="tbl">
-      <thead><tr><th style="width:22%">Event</th><th>Time (Local)</th><th>Time (Z)</th><th>Fuel</th><th>Position</th></tr></thead>
-      <tbody>
-        <tr><td>REQ</td>
-          <td><input type="text" inputmode="numeric" maxlength="4" id="evt_req_time_local" placeholder="1532"></td>
-          <td><input type="text" inputmode="numeric" maxlength="4" id="evt_req_time_z" placeholder="2332"></td>
-          <td><input type="text" id="evt_req_fuel" placeholder="lbs/gal"></td>
-          <td><input type="text" id="evt_req_pos" placeholder="lat/long or fix"></td></tr>
-        <tr><td>T/O</td>
-          <td><input type="text" inputmode="numeric" maxlength="4" id="evt_to_time_local"></td>
-          <td><input type="text" inputmode="numeric" maxlength="4" id="evt_to_time_z"></td>
-          <td><input type="text" id="evt_to_fuel"></td>
-          <td><input type="text" id="evt_to_pos"></td></tr>
-        <tr><td>CSP O/S</td>
-          <td><input type="text" inputmode="numeric" maxlength="4" id="evt_csp_time_local"></td>
-          <td><input type="text" inputmode="numeric" maxlength="4" id="evt_csp_time_z"></td>
-          <td><input type="text" id="evt_csp_fuel"></td>
-          <td><input type="text" id="evt_csp_pos"></td></tr>
-        <tr><td>TGT LOC</td>
-          <td><input type="text" inputmode="numeric" maxlength="4" id="evt_tgt_time_local"></td>
-          <td><input type="text" inputmode="numeric" maxlength="4" id="evt_tgt_time_z"></td>
-          <td><input type="text" id="evt_tgt_fuel"></td>
-          <td><input type="text" id="evt_tgt_pos"></td></tr>
-        <tr><td>OHD</td>
-          <td><input type="text" inputmode="numeric" maxlength="4" id="evt_ohd_time_local"></td>
-          <td><input type="text" inputmode="numeric" maxlength="4" id="evt_ohd_time_z"></td>
-          <td><input type="text" id="evt_ohd_fuel"></td>
-          <td><input type="text" id="evt_ohd_pos"></td></tr>
-        <tr><td>D/S</td>
-          <td><input type="text" inputmode="numeric" maxlength="4" id="evt_ds_time_local"></td>
-          <td><input type="text" inputmode="numeric" maxlength="4" id="evt_ds_time_z"></td>
-          <td><input type="text" id="evt_ds_fuel"></td>
-          <td><input type="text" id="evt_ds_pos"></td></tr>
-        <tr><td>S/D</td>
-          <td><input type="text" inputmode="numeric" maxlength="4" id="evt_sd_time_local"></td>
-          <td><input type="text" inputmode="numeric" maxlength="4" id="evt_sd_time_z"></td>
-          <td><input type="text" id="evt_sd_fuel"></td>
-          <td><input type="text" id="evt_sd_pos"></td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="card">
-    <h2>Comments</h2>
-    <textarea id="comments" placeholder="Freeform notes, comms snippets, frequencies, coordinates, etc."></textarea>
-    <div class="mini">Autosaves every 5 seconds. Network needed for METAR, On‑Scene, and Point Wx.</div>
-  </div>
+  <details class="card" open>
+    <summary><h2>Comments</h2></summary>
+    <div class="card-body">
+      <textarea id="comments" placeholder="Freeform notes, comms snippets, frequencies, coordinates, etc."></textarea>
+      <div class="mini">Autosaves every 5 seconds. Network needed for METAR, On‑Scene, and Point Wx.</div>
+    </div>
+  </details>
 </main>
 
 <noscript><div class="jswarn">JavaScript is disabled. Buttons won’t work.</div></noscript>
