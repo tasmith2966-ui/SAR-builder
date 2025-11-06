@@ -47,12 +47,15 @@
   }
   attachSync('brief_current_time','brief_current_time_z');
   attachSync('brief_call_time','brief_call_time_z');
+  ['req','to','csp','tgt','ohd','ds','sd'].forEach(function(tag){
+    attachSync('evt_'+tag+'_time_local','evt_'+tag+'_time_z');
+  });
 
   // Save/Load
   function serialize(){
     var ids=[
       'brief_current_time','brief_current_time_z','brief_call_time','brief_call_time_z',
-      'brief_location','brief_search_object','brief_tasking','brief_reporting_source','brief_other_assets',
+      'brief_location','brief_tasking','brief_reporting_source','brief_other_assets',
       'brief_weather','metar_station','brief_fuel_plan',
       'so_name','so_length','so_type','so_color','so_pob','so_position',
       'os_wind','os_ceiling','os_vis','os_airtemp','os_seas','os_swells',
@@ -95,8 +98,7 @@
       'Time: '+val('brief_current_time')+'ZL / '+val('brief_current_time_z')+'Z\\n'+
       'Call: '+val('brief_call_time')+'ZL / '+val('brief_call_time_z')+'Z\\n'+
       'Loc: '+val('brief_location')+'\\n'+
-      'Object: '+val('brief_search_object')+'\\n'+
-      'Tasking: '+val('brief_tasking')+'\\n'+
+      'Case Details: '+val('brief_tasking')+'\\n'+
       'Reporting: '+val('brief_reporting_source')+' | Others: '+val('brief_other_assets')+'\\n'+
       'Weather: '+val('brief_weather')+'\\n';
     var blob=new Blob([md],{type:'text/plain'});
@@ -105,7 +107,11 @@
 
   // Weather helpers
   function setErr(id,msg){ var e=$(id); if(e) e.textContent=msg||''; }
-  function insertWeatherLine(text){ var wx=$('brief_weather'); wx.value = text + (wx.value?'\n'+wx.value:''); autoGrow(wx); }
+  function insertWeatherLine(text){
+    var wx=$('brief_weather'); if(!wx) return;
+    wx.value = '• '+text + (wx.value?'\n\n'+wx.value:'');
+    autoGrow(wx);
+  }
   function fetchJSON(url){ return fetch(url).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }); }
   function fetchText(url){ return fetch(url).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); }); }
 
@@ -147,7 +153,6 @@
     var lon=(dlon+mlon/60)*(e==='W'?-1:1);
     return {lat:lat, lon:lon};
   }
-  function ktsFromMps(mps){ return Math.round(mps*1.94384); }
   function miFromMeters(m){ return (m==null)?'':(m/1609.344).toFixed(1); }
   function fFromC(c){ return (c==null)?'':Math.round(c*9/5+32); }
   function ftFromMeters(m){ return (m==null)?'':Math.round(m*3.28084); }
@@ -175,11 +180,120 @@
   }
   function getJSONFallback(u1,u2){ return fetchJSON(u1).catch(function(){ return fetchJSON(u2); }); }
 
-  $('btnPointAvi').addEventListener('click', function(){
-    var s=$('brief_location').value, pt=parseLatLonDM(s);
-    if(!pt){ setErr('onscene_err','Enter lat/long like 3655.39N/12208.28W'); return; }
-    setErr('onscene_err',''); var src=$('onscene_src'); if(src) src.textContent='';
-    getJSONFallback('https://api.weather.gov/points/'+pt.lat+','+pt.lon,'https://r.jina.ai/http://api.weather.gov/points/'+pt.lat+','+pt.lon)
+  function distanceNm(lat1,lon1,lat2,lon2){
+    var toRad=Math.PI/180;
+    var dLat=(lat2-lat1)*toRad;
+    var dLon=(lon2-lon1)*toRad;
+    var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*toRad)*Math.cos(lat2*toRad)*Math.sin(dLon/2)*Math.sin(dLon/2);
+    var c=2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return 3440.065*c;
+  }
+  function normalizeStationList(raw){
+    var list=raw;
+    if(raw && Array.isArray(raw.station)) list=raw.station;
+    else if(raw && Array.isArray(raw.stations)) list=raw.stations;
+    if(!Array.isArray(list)) return [];
+    var out=[];
+    for(var i=0;i<list.length;i++){
+      var entry=list[i];
+      var id=null, lat=null, lon=null, type='', name='';
+      if(Array.isArray(entry)){
+        id=entry[0]; lat=parseFloat(entry[1]); lon=parseFloat(entry[2]); type=entry[3]||''; name=entry[4]||'';
+      }else if(entry && typeof entry==='object'){
+        id=entry.id||entry.station_id||entry[0];
+        lat=parseFloat(entry.lat||entry.latitude||entry[1]);
+        lon=parseFloat(entry.lon||entry.longitude||entry[2]);
+        type=entry.type||entry.kind||entry.t||'';
+        name=entry.name||entry.title||entry.desc||'';
+      }
+      if(!id || !isFinite(lat) || !isFinite(lon)) continue;
+      out.push({id:String(id).trim(), lat:lat, lon:lon, type:String(type||'').toLowerCase(), name:String(name||'')});
+    }
+    return out;
+  }
+  function parseRealtime(text){
+    if(!text) return null;
+    var lines=text.split(/\r?\n/);
+    var header=null;
+    for(var i=0;i<lines.length;i++){
+      var line=lines[i].trim();
+      if(!line) continue;
+      if(line.charAt(0)==='#'){
+        if(!header){
+          var maybe=line.replace(/^#+\s*/,'').trim();
+          if(maybe) header=maybe.split(/\s+/);
+        }
+        continue;
+      }
+      if(!header) continue;
+      var parts=line.split(/\s+/);
+      if(parts.length<header.length) continue;
+      var rec={};
+      for(var j=0;j<header.length && j<parts.length;j++){ rec[header[j]]=parts[j]; }
+      return rec;
+    }
+    return null;
+  }
+  function metersToFeet(value){
+    var v=parseFloat(value);
+    if(!isFinite(v)) return null;
+    return v*3.28084;
+  }
+  function fetchBuoyObservation(stationId){
+    var url='https://www.ndbc.noaa.gov/data/realtime2/'+stationId+'.txt';
+    var fallback='https://r.jina.ai/http://www.ndbc.noaa.gov/data/realtime2/'+stationId+'.txt';
+    return fetchText(url).catch(function(){ return fetchText(fallback); }).then(function(text){
+      var rec=parseRealtime(text);
+      if(!rec) throw new Error('no data');
+      return rec;
+    });
+  }
+  function fetchNearestBuoy(pt){
+    var url='https://www.ndbc.noaa.gov/ndbcmapstations.json';
+    var fallback='https://r.jina.ai/http://www.ndbc.noaa.gov/ndbcmapstations.json';
+    return fetchJSON(url).catch(function(){ return fetchJSON(fallback); }).then(function(raw){
+      var stations=normalizeStationList(raw);
+      if(!stations.length) throw new Error('no stations');
+      var pool=stations.filter(function(st){ return st.type.indexOf('buoy')!==-1 || st.type.indexOf('dart')!==-1; });
+      if(!pool.length) pool=stations;
+      var best=null;
+      for(var i=0;i<pool.length;i++){
+        var st=pool[i];
+        var dist=distanceNm(pt.lat, pt.lon, st.lat, st.lon);
+        if(!isFinite(dist)) continue;
+        if(!best || dist<best.distance){ best={station:st, distance:dist}; }
+      }
+      if(!best) throw new Error('no station');
+      return fetchBuoyObservation(best.station.id).then(function(rec){
+        return {station:best.station, distanceNm:best.distance, record:rec};
+      });
+    });
+  }
+  function buoySeaState(record){
+    if(!record) return {seas:'', swells:''};
+    var seas='';
+    var wvht=metersToFeet(record.WVHT);
+    if(wvht!=null){
+      seas=wvht.toFixed(1)+' ft';
+      var dpd=parseFloat(record.DPD);
+      if(isFinite(dpd)) seas+=' @ '+Math.round(dpd)+'s';
+      var mwd=parseFloat(record.MWD);
+      if(isFinite(mwd)) seas+=' '+Math.round(mwd)+'°';
+    }
+    var swells='';
+    var swh=metersToFeet(record.SwH);
+    if(swh!=null){
+      swells=swh.toFixed(1)+' ft';
+      var swp=parseFloat(record.SwP);
+      if(isFinite(swp)) swells+=' @ '+Math.round(swp)+'s';
+      var swd=parseFloat(record.SwD);
+      if(isFinite(swd)) swells+=' '+Math.round(swd)+'°';
+      else if(record.SwD && /^[A-Z]{1,3}$/.test(record.SwD)) swells+=' '+record.SwD;
+    }
+    return {seas:seas, swells:swells};
+  }
+  function fetchPointObservation(pt){
+    return getJSONFallback('https://api.weather.gov/points/'+pt.lat+','+pt.lon,'https://r.jina.ai/http://api.weather.gov/points/'+pt.lat+','+pt.lon)
     .then(function(points){
       var props=points&&points.properties; if(!props) throw new Error('no props');
       return fetchJSON(props.observationStations).catch(function(){
@@ -193,55 +307,84 @@
         .then(function(obs){ return {stId:stId, obs:obs}; });
     }).then(function(pkg){
       var p=pkg.obs&&pkg.obs.properties; if(!p) throw new Error('no obs');
-      var windKt=p.windSpeed&&p.windSpeed.value!=null?ktsFromMps(p.windSpeed.value):'';
+      var windKt=p.windSpeed&&p.windSpeed.value!=null?Math.round(p.windSpeed.value*1.94384):'';
       var windDir=p.windDirection&&p.windDirection.value!=null?Math.round(p.windDirection.value):null;
-      var visMi=p.visibility&&p.visibility.value!=null?miFromMeters(p.visibility.value):'';
-      var tempF=p.temperature&&p.temperature.value!=null?fFromC(p.temperature.value):'';
+      var visMi=p.visibility&&p.visibility.value!=null?(p.visibility.value/1609.344).toFixed(1):'';
+      var tempF=p.temperature&&p.temperature.value!=null?Math.round(p.temperature.value*9/5+32):'';
       var altIn=inHgFromPa(p.barometricPressure&&p.barometricPressure.value);
       var ceil=lowestCeilingFt(p.cloudLayers||[]);
       var cat=flightCategory(ceil[1], visMi);
-      if($('os_wind')) $('os_wind').value=(windKt?windKt+' kt ':'')+(windDir!=null?windDir+'°':'');
-      if($('os_vis')) $('os_vis').value=visMi?visMi+' mi':'';
-      if($('os_airtemp')) $('os_airtemp').value=tempF?tempF+'°F':'';
-      if($('os_ceiling')) $('os_ceiling').value=ceil[1]?ceil[1]+' ft '+ceil[0]:'';
-      if($('onscene_src')) $('onscene_src').textContent='Obs station '+pkg.stId;
-      var ll = (pt.lat.toFixed?pt.lat.toFixed(3):pt.lat)+','+(pt.lon.toFixed?pt.lon.toFixed(3):pt.lon);
+      var ll=(pt.lat.toFixed?pt.lat.toFixed(3):pt.lat)+','+(pt.lon.toFixed?pt.lon.toFixed(3):pt.lon);
+      return {
+        stationId:pkg.stId,
+        windKt:windKt,
+        windDir:windDir,
+        visMi:visMi,
+        tempF:tempF,
+        altimeter:altIn,
+        ceilingFt:ceil[1],
+        ceilingAmount:ceil[0],
+        category:cat,
+        latlon:ll
+      };
+    });
+  }
+
+  $('btnPointAvi').addEventListener('click', function(){
+    var s=$('brief_location').value, pt=parseLatLonDM(s);
+    if(!pt){ setErr('onscene_err','Enter lat/long like 3655.39N/12208.28W'); return; }
+    setErr('onscene_err',''); var src=$('onscene_src'); if(src) src.textContent='';
+    fetchPointObservation(pt).then(function(obs){
+      if($('os_wind')) $('os_wind').value=(obs.windKt?obs.windKt+' kt ':'')+(obs.windDir!=null?obs.windDir+'°':'');
+      if($('os_vis')) $('os_vis').value=obs.visMi?obs.visMi+' mi':'';
+      if($('os_airtemp')) $('os_airtemp').value=obs.tempF?obs.tempF+'°F':'';
+      if($('os_ceiling')) $('os_ceiling').value=obs.ceilingFt?obs.ceilingFt+' ft '+obs.ceilingAmount:'';
+      if(src) src.textContent=obs.stationId?'Obs station '+obs.stationId:'';
       var parts=[];
-      if(windDir!=null||windKt) parts.push('Winds '+(windDir!=null?windDir+'°/':'')+(windKt||'')+'kt');
-      if(visMi) parts.push('Vis '+visMi+'sm');
-      if(ceil[1]) parts.push('Ceil '+ceil[1]+' ft '+ceil[0]);
-      if(tempF!=='') parts.push('Temp '+tempF+'F');
-      if(altIn) parts.push('Alt '+altIn+'inHg');
-      parts.push('Cat '+cat);
-      insertWeatherLine('Point Wx '+ll+': '+parts.join(', '));
+      if(obs.windDir!=null || obs.windKt!==''){
+        var w='Winds ';
+        if(obs.windDir!=null) w+=obs.windDir+'°';
+        if(obs.windDir!=null && obs.windKt!=='') w+='/';
+        if(obs.windKt!=='') w+=obs.windKt+'kt';
+        parts.push(w.trim());
+      }
+      if(obs.visMi) parts.push('Vis '+obs.visMi+'sm');
+      if(obs.ceilingFt) parts.push('Ceil '+obs.ceilingFt+' ft '+obs.ceilingAmount);
+      if(obs.tempF!=='') parts.push('Temp '+obs.tempF+'F');
+      if(obs.altimeter) parts.push('Alt '+obs.altimeter+'inHg');
+      parts.push('Cat '+obs.category);
+      insertWeatherLine('Point Wx '+obs.latlon+': '+parts.join(', '));
     }).catch(function(){ setErr('onscene_err','Point lookup failed.'); });
   });
 
   $('btnOnScene').addEventListener('click', function(){
     var s=$('brief_location').value, pt=parseLatLonDM(s);
     if(!pt){ setErr('onscene_err','Enter lat/long like 3655.39N/12208.28W'); return; }
-    setErr('onscene_err',''); var src=$('onscene_src'); if(src) src.textContent='';
-    var p1='https://api.weather.gov/points/'+pt.lat+','+pt.lon, p2='https://r.jina.ai/http://api.weather.gov/points/'+pt.lat+','+pt.lon;
-    fetchJSON(p1).catch(function(){ return fetchJSON(p2); }).then(function(points){
-      var props=points&&points.properties; if(!props) throw new Error('no props');
-      return fetchJSON(props.observationStations).catch(function(){
-        return fetchJSON('https://r.jina.ai/http://api.weather.gov/gridpoints/'+props.gridId+'/'+props.gridX+','+props.gridY+'/stations');
-      }).then(function(sts){ return {props:props, sts:sts}; });
-    }).then(function(ctx){
-      var stId=null; try{ stId=ctx.sts.features[0].properties.stationIdentifier; }catch(e){}
-      if(!stId) throw new Error('no station');
-      return fetchJSON('https://api.weather.gov/stations/'+stId+'/observations/latest')
-        .catch(function(){ return fetchJSON('https://r.jina.ai/http://api.weather.gov/stations/'+stId+'/observations/latest'); });
-    }).then(function(latest){
-      var p=latest&&latest.properties; if(!p) throw new Error('no obs');
-      var windKt=p.windSpeed&&p.windSpeed.value!=null?Math.round(p.windSpeed.value*1.94384):'';
-      var windDir=p.windDirection&&p.windDirection.value!=null?Math.round(p.windDirection.value):null;
-      var vis=p.visibility&&p.visibility.value!=null?(p.visibility.value/1609.344).toFixed(1):'';
-      var temp=p.temperature&&p.temperature.value!=null?Math.round(p.temperature.value*9/5+32):'';
-      if($('os_wind')) $('os_wind').value=(windKt?windKt+' kt ':'')+(windDir!=null?windDir+'°':'');
-      if($('os_vis')) $('os_vis').value=vis?vis+' mi':'';
-      if($('os_airtemp')) $('os_airtemp').value=temp?temp+'°F':'';
-      if(src) src.textContent='Obs: station set';
+    setErr('onscene_err','');
+    var src=$('onscene_src'); if(src) src.textContent='';
+    if($('os_seas')) $('os_seas').value='';
+    if($('os_swells')) $('os_swells').value='';
+    var obsPromise=fetchPointObservation(pt);
+    var buoyPromise=fetchNearestBuoy(pt).catch(function(){ return null; });
+    Promise.all([obsPromise, buoyPromise]).then(function(results){
+      var obs=results[0], buoy=results[1];
+      if(!obs) throw new Error('no obs');
+      if($('os_wind')) $('os_wind').value=(obs.windKt?obs.windKt+' kt ':'')+(obs.windDir!=null?obs.windDir+'°':'');
+      if($('os_vis')) $('os_vis').value=obs.visMi?obs.visMi+' mi':'';
+      if($('os_airtemp')) $('os_airtemp').value=obs.tempF?obs.tempF+'°F':'';
+      if($('os_ceiling')) $('os_ceiling').value=obs.ceilingFt?obs.ceilingFt+' ft '+obs.ceilingAmount:'';
+      var notes=[];
+      if(obs.stationId) notes.push('Obs station '+obs.stationId);
+      if(buoy && buoy.record){
+        var seas=buoySeaState(buoy.record);
+        if($('os_seas')) $('os_seas').value=seas.seas||'';
+        if($('os_swells')) $('os_swells').value=seas.swells||'';
+        var label='Buoy '+buoy.station.id;
+        if(buoy.station.name) label+=' '+buoy.station.name;
+        if(isFinite(buoy.distanceNm)) label+=' (~'+Math.round(buoy.distanceNm)+' nm)';
+        notes.push('Seas '+label.trim());
+      }
+      if(src) src.textContent=notes.join(' • ');
       flash('On‑scene weather updated.');
     }).catch(function(){ setErr('onscene_err','On‑scene lookup failed.'); });
   });
@@ -278,25 +421,30 @@
     var t_out = dist/tas; var f_out = FC_CRUISE*t_out; var fuel_on_scene = start - f_out;
     var t_back = back/tas; var f_back = FC_CRUISE*t_back; var bingo = end + f_back;
     var f_avail = fuel_on_scene - bingo; var t_hover = f_avail/ FC_HOVER;
-    var good = t_hover >= 0;
-    var badge = good ? '<span class="badge">GOOD</span>' : '<span class="badge bad">SHORT</span>';
-    var short_text = good ? '' : ('Short by <b>'+Math.abs(f_avail).toFixed(0)+'</b> units at on‑scene.');
+    var fuel_ok = t_hover >= 0;
+    var fuel_badge = fuel_ok ? '<span class="badge">GOOD</span>' : '<span class="badge bad">SHORT</span>';
+    var short_text = fuel_ok ? '' : ('Short by <b>'+Math.abs(f_avail).toFixed(0)+'</b> units at on‑scene.');
     var zfw = weight - start;
     var weight_on_scene = zfw + fuel_on_scene;
     var weight_bingo = zfw + bingo;
     var weight_landing = zfw + end;
-    var hover_ok = weight_on_scene <= 9200;
-    var hover_badge = hover_ok ? '<span class="badge">GOOD</span>' : '<span class="badge bad">BAD</span>';
-    var hover_note = hover_ok ? '' : ' (over 9200)';
-    out.innerHTML = ''
-      + '<div><b>Outbound:</b> Time '+fc_fmtH(t_out)+' • Fuel '+f_out.toFixed(0)+' • Weight '+weight_on_scene.toFixed(0)+'</div>'
-      + '<div><b>Fuel on Scene:</b> '+fuel_on_scene.toFixed(0)+' • Weight '+weight_on_scene.toFixed(0)+'</div>'
-      + '<div class="mini">(Takeoff '+start.toFixed(0)+' − Outbound '+f_out.toFixed(0)+')</div>'
-      + '<div style="border-top:1px dashed #c9bb98; margin-top:8px; padding-top:8px"><b>On‑Scene Fuel Available:</b> '+Math.max(0,f_avail).toFixed(0)+' '+badge+'</div>'
-      + '<div><b>On‑Scene Time (hover):</b> '+fc_fmtH(t_hover)+' at '+FC_HOVER.toFixed(0)+'/hr • Weight '+weight_on_scene.toFixed(0)+' '+hover_badge+hover_note+'</div>'
-      + (short_text?'<div>'+short_text+'</div>':'')
-      + '<div><b>Planned Landing Fuel:</b> '+end.toFixed(0)+' • Landing Weight '+weight_landing.toFixed(0)+'</div>'
-      + '<div style="border-top:1px dashed #c9bb98; margin-top:8px; padding-top:8px"><b>Return (Bingo):</b> Time '+fc_fmtH(t_back)+' • Transit Fuel '+f_back.toFixed(0)+' • <b>Bingo</b> '+bingo.toFixed(0)+' • Weight '+weight_bingo.toFixed(0)+'</div>';
+    var weight_ok = weight_on_scene <= 9200;
+    var weight_badge = weight_ok ? '<span class="badge">GOOD</span>' : '<span class="badge bad">BAD</span>';
+    var weight_note = weight_ok ? '' : ' (over 9200)';
+    var sections=[];
+    sections.push('<div style="margin-bottom:10px"><b>Outbound</b><div>Time '+fc_fmtH(t_out)+' • Fuel Used '+f_out.toFixed(0)+'</div></div>');
+    var onScene='<div style="border-top:1px dashed #c9bb98; padding-top:8px; margin-top:8px"><b>On‑Scene</b>'+
+      '<div>Fuel on Scene '+fuel_on_scene.toFixed(0)+'</div>'+
+      '<div class="mini">(Takeoff '+start.toFixed(0)+' − Outbound '+f_out.toFixed(0)+')</div>'+
+      '<div>Fuel Available '+Math.max(0,f_avail).toFixed(0)+' '+fuel_badge+'</div>'+
+      '<div>Hover Time '+fc_fmtH(t_hover)+' at '+FC_HOVER.toFixed(0)+'/hr</div>'+
+      '<div>On‑Scene Weight '+weight_on_scene.toFixed(0)+' '+weight_badge+weight_note+'</div>'+
+      (short_text?'<div>'+short_text+'</div>':'')+
+      '</div>';
+    sections.push(onScene);
+    sections.push('<div style="border-top:1px dashed #c9bb98; padding-top:8px; margin-top:8px"><b>Inbound</b><div>Time '+fc_fmtH(t_back)+' • Transit Fuel '+f_back.toFixed(0)+'</div><div>Bingo '+bingo.toFixed(0)+' • Return Weight '+weight_bingo.toFixed(0)+'</div></div>');
+    sections.push('<div style="border-top:1px dashed #c9bb98; padding-top:8px; margin-top:8px"><b>Landing</b><div>Planned Fuel '+end.toFixed(0)+' • Landing Weight '+weight_landing.toFixed(0)+'</div></div>');
+    out.innerHTML = sections.join('');
   }
   function fc_clear(){ ['fc_start','fc_weight','fc_end','fc_dist','fc_tas','fc_dist_back'].forEach(function(id){ $(id).value=''; }); $('fc_out').innerHTML=''; }
   $('fc_btn_calc').addEventListener('click', fc_calc);
