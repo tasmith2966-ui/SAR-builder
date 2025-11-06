@@ -285,15 +285,18 @@
     var weight_on_scene = zfw + fuel_on_scene;
     var weight_bingo = zfw + bingo;
     var weight_landing = zfw + end;
+    var hover_ok = weight_on_scene <= 9200;
+    var hover_badge = hover_ok ? '<span class="badge">GOOD</span>' : '<span class="badge bad">BAD</span>';
+    var hover_note = hover_ok ? '' : ' (over 9200)';
     out.innerHTML = ''
       + '<div><b>Outbound:</b> Time '+fc_fmtH(t_out)+' • Fuel '+f_out.toFixed(0)+' • Weight '+weight_on_scene.toFixed(0)+'</div>'
       + '<div><b>Fuel on Scene:</b> '+fuel_on_scene.toFixed(0)+' • Weight '+weight_on_scene.toFixed(0)+'</div>'
       + '<div class="mini">(Takeoff '+start.toFixed(0)+' − Outbound '+f_out.toFixed(0)+')</div>'
-      + '<div style="border-top:1px dashed #c9bb98; margin-top:8px; padding-top:8px"><b>Return (Bingo):</b> Time '+fc_fmtH(t_back)+' • Transit Fuel '+f_back.toFixed(0)+' • <b>Bingo</b> '+bingo.toFixed(0)+' • Weight '+weight_bingo.toFixed(0)+'</div>'
       + '<div style="border-top:1px dashed #c9bb98; margin-top:8px; padding-top:8px"><b>On‑Scene Fuel Available:</b> '+Math.max(0,f_avail).toFixed(0)+' '+badge+'</div>'
-      + '<div><b>On‑Scene Time (hover):</b> '+fc_fmtH(t_hover)+' at '+FC_HOVER.toFixed(0)+'/hr</div>'
+      + '<div><b>On‑Scene Time (hover):</b> '+fc_fmtH(t_hover)+' at '+FC_HOVER.toFixed(0)+'/hr • Weight '+weight_on_scene.toFixed(0)+' '+hover_badge+hover_note+'</div>'
+      + (short_text?'<div>'+short_text+'</div>':'')
       + '<div><b>Planned Landing Fuel:</b> '+end.toFixed(0)+' • Landing Weight '+weight_landing.toFixed(0)+'</div>'
-      + '<div>'+short_text+'</div>';
+      + '<div style="border-top:1px dashed #c9bb98; margin-top:8px; padding-top:8px"><b>Return (Bingo):</b> Time '+fc_fmtH(t_back)+' • Transit Fuel '+f_back.toFixed(0)+' • <b>Bingo</b> '+bingo.toFixed(0)+' • Weight '+weight_bingo.toFixed(0)+'</div>';
   }
   function fc_clear(){ ['fc_start','fc_weight','fc_end','fc_dist','fc_tas','fc_dist_back'].forEach(function(id){ $(id).value=''; }); $('fc_out').innerHTML=''; }
   $('fc_btn_calc').addEventListener('click', fc_calc);
