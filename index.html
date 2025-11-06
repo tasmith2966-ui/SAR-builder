@@ -224,24 +224,6 @@
   </details>
 
   <details class="card" open>
-    <summary><h2>Pre‑Ramp Checklist</h2></summary>
-    <div class="card-body">
-      <div class="checklist">
-        <label><input type="checkbox" id="chk_weather"> Check Weather</label>
-        <label><input type="checkbox" id="chk_notams"> Check NOTAMs</label>
-        <label><input type="checkbox" id="chk_fuelstop"> Fuel / Defuel? Next Fuel Stop</label>
-        <label><input type="checkbox" id="chk_adiz"> Coordinate ADIZ / Warning Areas</label>
-        <label><input type="checkbox" id="chk_sign"> Sign for Aircraft</label>
-        <label><input type="checkbox" id="chk_ifr"> File IFR Flight Plan</label>
-        <label><input type="checkbox" id="chk_ops"> Call Ops</label>
-        <label><input type="checkbox" id="chk_sap"> Search Action Plan from Sector</label>
-        <label><input type="checkbox" id="chk_flightsurgeon"> Call Flight Surgeon</label>
-        <label><input type="checkbox" id="chk_extragear"> Extra gear (litter, SLDMB, Nightsun)</label>
-      </div>
-    </div>
-  </details>
-
-  <details class="card" open>
     <summary><h2>Search Data</h2></summary>
     <div class="card-body">
       <div class="grid g3">
@@ -262,6 +244,7 @@
     <div class="card-body">
       <div class="grid g3">
         <div><label>Takeoff Fuel</label><input type="text" id="fc_start" inputmode="decimal" placeholder="e.g., 1500"></div>
+        <div><label>Takeoff Weight</label><input type="text" id="fc_weight" inputmode="decimal" placeholder="e.g., 14300"></div>
         <div><label>Planned Landing Fuel</label><input type="text" id="fc_end" inputmode="decimal" placeholder="e.g., 400"></div>
         <div><label>Distance to On‑Scene (NM)</label><input type="text" id="fc_dist" inputmode="decimal" placeholder="e.g., 40"></div>
         <div><label>Cruise Speed (KTAS)</label><input type="text" id="fc_tas" inputmode="decimal" placeholder="e.g., 120"></div>
@@ -273,6 +256,24 @@
       </div>
       <div class="mini">Assumptions: Cruise 600/hr, Hover/Climb 700/hr. Units must match (lbs or gal). Times rounded to nearest minute.</div>
       <div id="fc_out" style="margin-top:10px; font-size:16px; line-height:1.35"></div>
+    </div>
+  </details>
+
+  <details class="card" open>
+    <summary><h2>Pre‑Ramp Checklist</h2></summary>
+    <div class="card-body">
+      <div class="checklist">
+        <label><input type="checkbox" id="chk_weather"> Check Weather</label>
+        <label><input type="checkbox" id="chk_notams"> Check NOTAMs</label>
+        <label><input type="checkbox" id="chk_fuelstop"> Fuel / Defuel? Next Fuel Stop</label>
+        <label><input type="checkbox" id="chk_adiz"> Coordinate ADIZ / Warning Areas</label>
+        <label><input type="checkbox" id="chk_sign"> Sign for Aircraft</label>
+        <label><input type="checkbox" id="chk_ifr"> File IFR Flight Plan</label>
+        <label><input type="checkbox" id="chk_ops"> Call Ops</label>
+        <label><input type="checkbox" id="chk_sap"> Search Action Plan from Sector</label>
+        <label><input type="checkbox" id="chk_flightsurgeon"> Call Flight Surgeon</label>
+        <label><input type="checkbox" id="chk_extragear"> Extra gear (litter, SLDMB, Nightsun)</label>
+      </div>
     </div>
   </details>
 

@@ -64,7 +64,7 @@
       'evt_ohd_time_local','evt_ohd_time_z','evt_ohd_fuel','evt_ohd_pos',
       'evt_ds_time_local','evt_ds_time_z','evt_ds_fuel','evt_ds_pos',
       'evt_sd_time_local','evt_sd_time_z','evt_sd_fuel','evt_sd_pos',
-      'comments','fc_start','fc_end','fc_dist','fc_tas','fc_dist_back'
+      'comments','fc_start','fc_weight','fc_end','fc_dist','fc_tas','fc_dist_back'
     ];
     var o={}; for(var i=0;i<ids.length;i++){ var el=$(ids[i]); if(el) o[ids[i]]=el.value; }
     var checks=['chk_weather','chk_notams','chk_fuelstop','chk_adiz','chk_sign','chk_ifr','chk_ops','chk_sap','chk_flightsurgeon','chk_extragear'];
@@ -265,11 +265,15 @@
   function fc_num(id){ var v = ($(id).value||'').trim().replace(/,/g,''); return v? Number(v) : NaN; }
   function fc_fmtH(hours){ if(!isFinite(hours)) return '--:--'; var m=Math.max(0, Math.round(hours*60)); var h=Math.floor(m/60), mm=m%60; return String(h).padStart(2,'0')+':'+String(mm).padStart(2,'0'); }
   function fc_calc(){
-    var start=fc_num('fc_start'), end=fc_num('fc_end');
+    var start=fc_num('fc_start'), weight=fc_num('fc_weight'), end=fc_num('fc_end');
     var dist=fc_num('fc_dist'), tas=fc_num('fc_tas'), back=fc_num('fc_dist_back');
     var out=$('fc_out');
-    if([start,end,dist,tas,back].some(function(x){return !isFinite(x) || x<0;}) || tas===0){
+    if([start,weight,end,dist,tas,back].some(function(x){return !isFinite(x) || x<0;}) || tas===0){
       out.innerHTML='<div class="err">Check inputs. All non‑negative; speed > 0.</div>'; return;
+    }
+    if(weight < start){
+      out.innerHTML='<div class="err">Takeoff weight must be at least as large as takeoff fuel.</div>';
+      return;
     }
     var t_out = dist/tas; var f_out = FC_CRUISE*t_out; var fuel_on_scene = start - f_out;
     var t_back = back/tas; var f_back = FC_CRUISE*t_back; var bingo = end + f_back;
@@ -277,16 +281,21 @@
     var good = t_hover >= 0;
     var badge = good ? '<span class="badge">GOOD</span>' : '<span class="badge bad">SHORT</span>';
     var short_text = good ? '' : ('Short by <b>'+Math.abs(f_avail).toFixed(0)+'</b> units at on‑scene.');
+    var zfw = weight - start;
+    var weight_on_scene = zfw + fuel_on_scene;
+    var weight_bingo = zfw + bingo;
+    var weight_landing = zfw + end;
     out.innerHTML = ''
-      + '<div><b>Outbound:</b> Time '+fc_fmtH(t_out)+' • Fuel '+f_out.toFixed(0)+'</div>'
-      + '<div><b>Fuel on Scene:</b> '+fuel_on_scene.toFixed(0)+'</div>'
+      + '<div><b>Outbound:</b> Time '+fc_fmtH(t_out)+' • Fuel '+f_out.toFixed(0)+' • Weight '+weight_on_scene.toFixed(0)+'</div>'
+      + '<div><b>Fuel on Scene:</b> '+fuel_on_scene.toFixed(0)+' • Weight '+weight_on_scene.toFixed(0)+'</div>'
       + '<div class="mini">(Takeoff '+start.toFixed(0)+' − Outbound '+f_out.toFixed(0)+')</div>'
-      + '<div style="border-top:1px dashed #c9bb98; margin-top:8px; padding-top:8px"><b>Return (Bingo):</b> Time '+fc_fmtH(t_back)+' • Transit Fuel '+f_back.toFixed(0)+' • <b>Bingo</b> '+bingo.toFixed(0)+'</div>'
+      + '<div style="border-top:1px dashed #c9bb98; margin-top:8px; padding-top:8px"><b>Return (Bingo):</b> Time '+fc_fmtH(t_back)+' • Transit Fuel '+f_back.toFixed(0)+' • <b>Bingo</b> '+bingo.toFixed(0)+' • Weight '+weight_bingo.toFixed(0)+'</div>'
       + '<div style="border-top:1px dashed #c9bb98; margin-top:8px; padding-top:8px"><b>On‑Scene Fuel Available:</b> '+Math.max(0,f_avail).toFixed(0)+' '+badge+'</div>'
       + '<div><b>On‑Scene Time (hover):</b> '+fc_fmtH(t_hover)+' at '+FC_HOVER.toFixed(0)+'/hr</div>'
+      + '<div><b>Planned Landing Fuel:</b> '+end.toFixed(0)+' • Landing Weight '+weight_landing.toFixed(0)+'</div>'
       + '<div>'+short_text+'</div>';
   }
-  function fc_clear(){ ['fc_start','fc_end','fc_dist','fc_tas','fc_dist_back'].forEach(function(id){ $(id).value=''; }); $('fc_out').innerHTML=''; }
+  function fc_clear(){ ['fc_start','fc_weight','fc_end','fc_dist','fc_tas','fc_dist_back'].forEach(function(id){ $(id).value=''; }); $('fc_out').innerHTML=''; }
   $('fc_btn_calc').addEventListener('click', fc_calc);
   $('fc_btn_clear').addEventListener('click', fc_clear);
 })();
